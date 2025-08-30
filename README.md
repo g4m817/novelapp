@@ -1,7 +1,7 @@
 # NovelApp – End‑to‑End Coherent Novel Generation
 
 ## Note from author:
-> This project was one of my first attempts at learning how to integrate AI into web applications and taking a crack at prompt engineering. It's pretty basic, but it was fun to build. No license, if you find it useful in part or in full feel free to use it. It isn't perfect, it could use some tighter engineering but hey, I'm bored of it now.
+> This project was one of my first attempts at learning how to integrate AI into web applications and taking a crack at prompt engineering. It's pretty basic, but it was fun to build. No license, if you find it useful in part or in full feel free to use it. It isn't perfect, it could use some tighter engineering. For a minute I considered launching it and improving it, which is why it has complete systems for pricing, but hey, I'm bored of it now.
 
 ## Overview
 This repository contains a Flask application that generates long‑form fiction by moving through a structured pipeline: **metadata → outlines → arcs → chapter guides → prose → images**. It combines Flask + SQLAlchemy + Celery + Redis + Socket.IO on the backend with OpenAI models for text and image generation, and stores assets in S3‑compatible object storage.
