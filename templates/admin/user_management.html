@@ -1,0 +1,130 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>User Management</h4>
+<table class="striped">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Last Login IP</th>
+      <th>Role</th>
+      <th>Credits</th>
+      <th>Change Role</th>
+      <th>Lock/Unlock</th>
+      <th>Moderation</th>
+      <th>Delete User</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.last_login_ip }}</td>
+      <td>{{ u.role.name }}</td>
+      <td>{{ u.text_credits }}</td>
+      <td>
+        <form action="{{ url_for('admin.update_user_role', user_id=u.id) }}" method="POST">
+          <div class="input-field">
+            {% if user.username != u.username %}
+            <select name="role" class="browser-default">
+              {% for role in roles %}
+              <option value="{{ role.name }}" {% if u.role.name==role.name %}selected{% endif %}>
+                {{ role.name | capitalize }}
+              </option>
+              {% endfor %}
+            </select>
+            <button type="submit">Update</button>
+            {% else %}
+            <em>Cannot modify your own role</em>
+            {% endif %}
+          </div>
+        </form>
+      </td>
+      <td>
+        {% if u.id != user.id %}
+        <form action="{{ url_for('admin.toggle_lock_user', user_id=u.id) }}" method="POST" style="display:inline;">
+          <button type="submit">
+            {% if u.is_locked %}
+            Unlock
+            {% else %}
+            Lock
+            {% endif %}
+          </button>
+        </form>
+        {% else %}
+        <em>N/A</em>
+        {% endif %}
+      </td>
+      <td>
+        {% if u.id != user.id %}
+        <form action="{{ url_for('admin.toggle_under_review', user_id=u.id) }}" method="POST" style="display:inline;">
+          <button type="submit">
+            {% if u.under_review %}
+            Remove Review Flag
+            {% else %}
+            Flag for Review
+            {% endif %}
+          </button>
+        </form>
+        {% else %}
+        <em>N/A</em>
+        {% endif %}
+      </td>
+      <td>
+        {% if u.id != user.id %}
+        <button class="delete-user" onclick="deleteUser(event)" data-user-id="{{ u.id }}">Delete</button>
+        {% else %}
+        <em>Cannot delete self</em>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination Controls -->
+<div class="center">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('bp.user_management_view', page=pagination.prev_num) }}">« Prev</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+    {% if page_num %}
+    {% if page_num == pagination.page %}
+    <li class="active"><a href="#!">{{ page_num }}</a></li>
+    {% else %}
+    <li class="waves-effect"><a href="{{ url_for('bp.user_management_view', page=page_num) }}">{{ page_num }}</a></li>
+    {% endif %}
+    {% else %}
+    <li class="disabled"><a href="#!">…</a></li>
+    {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('bp.user_management_view', page=pagination.next_num) }}">Next »</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+
+<script>
+  function deleteUser(event) {
+    if (!confirm("Are you sure you want to delete this user?")) {
+      event.target.blur();
+      return;
+    }
+    const userId = event.target.dataset.userId;
+    fetch("/admin/delete_user/" + userId, { method: "DELETE" })
+      .then(() => window.location.reload());
+  }
+</script>
+{% endblock %}

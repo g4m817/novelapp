@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    background-color: #1e1e1e;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-content h5 {
+    margin-bottom: 8px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #aaa;
+  }
+
+  /* Input field styles */
+  .input-field input[type="text"],
+  .input-field input[type="number"],
+  .input-field textarea {
+    background-color: #000 !important;
+    color: #fff !important;
+    padding: 10px;
+    border: none;
+    border-bottom: 1px solid #555;
+    box-sizing: border-box;
+  }
+
+  .input-field input::placeholder,
+  .input-field textarea::placeholder {
+    color: #bbb;
+  }
+
+  .input-field label {
+    color: #fff;
+  }
+
+  .input-field label.active {
+    color: #fff;
+  }
+
+  /* Layout spacing for rows */
+  .row {
+    margin-bottom: 20px;
+  }
+
+  /* Action bar at the bottom */
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  .card-action .btn-credit {
+    background-color: #2979ff;
+    color: #fff;
+  }
+
+  /* Adjust checkbox label spacing */
+  .checkbox-group p {
+    margin: 10px 0;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Create Novel</h4>
+  {% include "story/base.html" %}
+
+  <div class="card">
+    <div class="card-content">
+      <h5>Story Overview &amp; Tags</h5>
+      <p class="section-info">
+        Fill in your novel details below. Provide a title, details, and any inspirations or writing style examples. Add
+        tags to improve discoverability.
+      </p>
+      <form id="story-form" method="POST">
+        <div class="row">
+          <div class="input-field col s12">
+            <input id="title" name="title" type="text" class="validate" value="{{ story.title if story else '' }}"
+              required placeholder="Enter novel title" />
+            <label for="title" class="active">Novel Title</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input id="details" name="details" type="text" class="validate" value="{{ story.details if story else '' }}"
+              required placeholder="Enter novel details" />
+            <label for="details">Novel Details</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input id="chapters" name="chapters_count" type="number" min="1" class="validate"
+              value="{{ story.chapters_count if story else 3 }}" required />
+            <label for="chapters">Number of Chapters</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <input id="inspirations" name="inspirations" type="text" class="validate"
+              value="{{ story.inspirations if story else '' }}" placeholder="Enter inspiration authors (optional)" />
+            <label for="inspirations">Inspiration Authors (optional)</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <textarea id="writing_style" name="writing_style" class="validate"
+              placeholder="Enter writing style example (optional)">{{ story.writing_style if story else '' }}</textarea>
+            <label for="writing_style">Writing Style Example (optional)</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            {% if story and story.tags %}
+            {% set ns = namespace(tag_objs=[]) %}
+            {% for tag in story.tags %}
+            {% set _ = ns.tag_objs.append({'id': tag.id, 'value': tag.name}) %}
+            {% endfor %}
+            {% endif %}
+            <input id="tags" name="tags" type="text"
+              value='{% if story and story.tags %}{{ ns.tag_objs|tojson }}{% endif %}' placeholder="Enter tags">
+            <label for="tags">Novel Tags</label>
+          </div>
+        </div>
+        <div class="row checkbox-group">
+          <div class="col s12">
+            <p>
+              <label>
+                <input type="checkbox" name="shared" {% if story and story.shared %}checked{% endif %} />
+                <span>Make story public (share)</span>
+              </label>
+            </p>
+            <p>
+              <label>
+                <input type="checkbox" name="mature" {% if story and story.is_mature %}checked{% endif %} />
+                <span>Mature</span>
+              </label>
+            </p>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="btn waves-effect waves-light" type="submit" id="to-step-2">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var tagify;
+    document.querySelector("#story-form").addEventListener("submit", function (e) {
+      var selectedTags = tagify.value;
+      var tagIds = selectedTags.map(function (tag) { return tag.id; }).join(",");
+      // You can attach tagIds to the form submission if needed.
+    });
+
+    const input = document.querySelector("#tags");
+    tagify = new Tagify(input, {
+      whitelist: [],
+      dropdown: {
+        enabled: 1,
+        fuzzySearch: true,
+        maxItems: 10,
+        classname: "tags-look",
+        position: "text",
+        closeOnSelect: false,
+      },
+    });
+
+    tagify.on("input", function (e) {
+      var value = e.detail.value;
+      fetch("/api/tags?query=" + value)
+        .then((response) => response.json())
+        .then(function (suggestions) {
+          tagify.settings.whitelist = suggestions;
+          tagify.dropdown.show.call(tagify, value);
+        });
+    });
+  });
+</script>
+{% endblock %}

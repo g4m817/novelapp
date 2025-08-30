@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .main-card {
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    margin-bottom: 20px;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  h5, h6 {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+
+  /* Flex container for image and textarea grouping */
+  .flex-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* For cover images: fixed dimensions; for chapters, we keep width fixed with auto height */
+  .img-preview-cover, .cover-placeholder {
+    width: 200px;
+    height: 200px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+
+  .flex-row .img-preview, .flex-row .img-placeholder {
+    width: 200px;
+    height: 200px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+
+  .cover-placeholder, .img-placeholder {
+    background-color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
+    font-size: 0.9em;
+  }
+
+  .flex-column {
+    flex: 1;
+  }
+
+  /* Form & Button Styles */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-weight: bold;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 8px;
+    background-color: #000;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 4px;
+  }
+
+  .btn {
+    background-color: #2e7d32;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+
+  .btn:hover {
+    background-color: #1b5e20;
+  }
+
+  .btn.btn-credit {
+    background-color: #1565c0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Chapter Image Section Styling */
+  .chapter-item {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background-color: #121212;
+    margin-bottom: 12px;
+    padding: 20px;
+    color: #fff;
+  }
+
+  .chapter-item h6 {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+  }
+
+  .section-divider {
+    border-top: 1px solid #444;
+    margin: 30px 0;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Generate Images for "{{ story.title }}"</h4>
+  {% include "story/base.html" %}
+  
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Cover Image</h5>
+      <div class="flex-row">
+        <div>
+          {% if story.presigned_cover_url %}
+            <img src="{{ story.presigned_cover_url }}" alt="Cover Image" class="img-preview-cover">
+          {% else %}
+            <div class="cover-placeholder">No Cover Image</div>
+          {% endif %}
+        </div>
+        <div class="flex-column">
+          <div class="form-group">
+            <label for="cover_prompt">Cover Image Prompt:</label>
+            <textarea id="cover_prompt" name="cover_prompt" rows="3" placeholder="Enter cover image prompt...">{{ story.cover_image_prompt or '' }}</textarea>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-credit" id="gen-cover" 
+                    onmouseenter="predictCoverCost(event)" 
+                    onmouseleave="hideCoverCost(event)" 
+                    onclick="generateCoverImage(event)">
+              <i class="material-icons left">autorenew</i> Generate Cover Image
+              <span id="predicted_cover_cost" style="margin-left: 6px;"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+      
+      <!-- Chapter Images Section -->
+      <h5>Chapter Images</h5>
+      {% for chapter in story.chapters %}
+      <div class="chapter-item" data-chapter-id="{{ chapter.id }}">
+        <h6>Chapter {{ chapter.chapter_number }} – {{ chapter.title }}</h6>
+        <div class="flex-row">
+          <div>
+            {% if chapter.presigned_chapter_url %}
+              <img src="{{ chapter.presigned_chapter_url }}" alt="Chapter {{ chapter.chapter_number }} Image" class="img-preview">
+            {% else %}
+              <div class="img-placeholder">No Chapter Image</div>
+            {% endif %}
+          </div>
+          <div class="flex-column">
+            <div class="form-group">
+              <label for="chapter_prompt_{{ chapter.id }}">Prompt:</label>
+              <textarea class="chapter_prompt" id="chapter_prompt_{{ chapter.id }}" name="chapter_prompts" rows="2" placeholder="Enter prompt for chapter {{ chapter.chapter_number }}">{{ chapter.chapter_image_prompt or '' }}</textarea>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-credit" id="gen-chapter-{{ chapter.id }}"
+                      onmouseenter="predictChapterCost(event, {{ chapter.id }})" 
+                      onmouseleave="hideChapterCost(event, {{ chapter.id }})" 
+                      onclick="generateChapterImage(event, {{ chapter.id }})">
+                <i class="material-icons left">autorenew</i> Generate Chapter Image
+                <span id="predicted_chapter_cost_{{ chapter.id }}" style="margin-left: 6px;"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      
+    </div>
+    <div class="card-action">
+      <!-- Additional actions can go here if needed -->
+    </div>
+  </div>
+</div>
+
+<script>
+  async function predictCoverCost(event) {
+    event.preventDefault();
+    const storyId = document.getElementById("story_id").value || "{{ story.id }}";
+    const response = await fetch(`/api/predict_image_cost/${storyId}`, { method: 'GET' });
+    const data = await response.json();
+    document.getElementById("predicted_cover_cost").innerText = data.total_predicted_credit_cost;
+  }
+  
+  function hideCoverCost(event) {
+    document.getElementById("predicted_cover_cost").innerText = "";
+  }
+
+  async function predictChapterCost(event, chapterId) {
+    event.preventDefault();
+    const storyId = document.getElementById("story_id").value || "{{ story.id }}";
+    const response = await fetch(`/api/predict_image_cost/${storyId}`, { method: 'GET' });
+    const data = await response.json();
+    document.getElementById("predicted_chapter_cost_" + chapterId).innerText = data.total_predicted_credit_cost;
+  }
+  
+  function hideChapterCost(event, chapterId) {
+    document.getElementById("predicted_chapter_cost_" + chapterId).innerText = "";
+  }
+  
+  async function generateCoverImage(event) {
+    event.preventDefault();
+    const storyId = document.getElementById("story_id").value || "{{ story.id }}";
+    const coverPrompt = document.getElementById("cover_prompt").value;
+    await fetch(`/api/generate_cover_image`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ story_id: storyId, cover_prompt: coverPrompt })
+    });
+  }
+
+  async function generateChapterImage(event, chapterId) {
+    event.preventDefault();
+    const storyId = document.getElementById("story_id").value || "{{ story.id }}";
+    const chapterPrompt = document.getElementById("chapter_prompt_" + chapterId).value;
+    await fetch(`/api/generate_chapter_image`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ story_id: storyId, chapter_id: chapterId, chapter_prompt: chapterPrompt })
+    });
+  }
+
+  socket.on("image_generated", function(data) {
+    // Ensure we are handling the event for the current story.
+    const currentStoryId = document.getElementById("story_id").value;
+    if (data.story_id != currentStoryId) return;
+    
+    // Update based on the image type.
+    if (data.type === "cover") {
+      const coverElem = document.querySelector('.img-preview-cover') || document.querySelector('.cover-placeholder');
+      if (coverElem) {
+        if (coverElem.tagName === "IMG") {
+          coverElem.src = data.image;
+        } else {
+          // Replace placeholder with new image.
+          coverElem.outerHTML = `<img src="${data.image}" alt="Cover Image" class="img-preview-cover">`;
+        }
+      } else {
+        console.error("Cover image element not found.");
+      }
+    } else if (data.type === "chapter") {
+      const chapterContainer = document.querySelector(`[data-chapter-id="${data.chapter_id}"]`);
+      if (chapterContainer) {
+        let chapterImg = chapterContainer.querySelector('.img-preview');
+        if (chapterImg) {
+          chapterImg.src = data.image;
+        } else {
+          let placeholder = chapterContainer.querySelector('.img-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = `<img src="${data.image}" alt="Chapter Image" class="img-preview">`;
+          } else {
+            console.error("Chapter image element not found for chapter " + data.chapter_id);
+          }
+        }
+      } else {
+        console.error("Chapter container not found for chapter " + data.chapter_id);
+      }
+    }
+  });
+</script>
+<!-- Hidden input to store story id for JS usage -->
+<input type="hidden" id="story_id" value="{{ story.id }}">
+{% endblock %}

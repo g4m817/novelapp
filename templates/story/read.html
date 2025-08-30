@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="novel-reader" class="container">
+  <!-- Header Section -->
+  <div class="row" style="margin-bottom: 20px;">
+    <div class="col m8">
+      <h3>{{ story.title }}</h3>
+      <p><strong>Author:</strong> {{ story.author }}</p>
+      <p><strong>Date:</strong> {{ story.created_at.strftime("%B %d, %Y") }}</p>
+      {% for tag in story.tags %}
+      <a href="/explore?tags={{tag.name}}">
+      <span class="tag-label"
+        style="cursor:pointer; background: #e0e0e0; color:#000;padding: 2px 6px; margin: 2px; border-radius: 4px;">
+        {{ tag.name }}
+      </span>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="col m4" style="margin-top:15px">
+      {% if story.user_id != user.id %}
+      {% if story in user.favorite_stories %}
+      <button onclick="toggleFavorite(event)" class="btn red uniform-btn" data-story-id="{{ story.id }}">
+        Unfavorite
+      </button>
+      {% else %}
+      <button onclick="toggleFavorite(event)" class="btn purple uniform-btn" data-story-id="{{ story.id }}">
+        Favorite
+      </button>
+      {% endif %}
+      {% endif %}
+      {% if story.user_id != user.id %}
+      {% if user in story.flaggers %}
+      <button id="flag-btn" data-story-id="{{ story.id }}" onclick="toggleFlag(event)"
+        class="btn grey lighten-1 uniform-btn">
+        Remove Report
+      </button>
+      {% else %}
+      <button id="flag-btn" data-story-id="{{ story.id }}" onclick="toggleFlag(event)"
+        class="btn grey lighten-1 uniform-btn">
+        Report
+      </button>
+      {% endif %}
+      {% endif %}
+      <a href="{{ url_for('story_views.story_comments', story_id=story.id) }}" class="btn blue uniform-btn">
+        View Comments
+      </a>
+      <button onclick="downloadEpub()" class="btn green uniform-btn">
+        Download EPUB
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" style="margin-bottom: 20px;">
+    <div class="progress-label" id="reader-progress-label">Progress: 0%</div>
+    <div class="progress">
+      <div class="determinate" id="reader-progress-bar" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Chapter Menu Sidenav -->
+  <ul class="sidenav" id="chapter-mobile-menu">
+    {% for chapter in chapters %}
+    <li>
+      <a href="#" data-chapter-id="{{ chapter.chapter_number }}" onclick="chapterClicked(event)">
+        Chapter {{ chapter.chapter_number }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <div style="margin-bottom: 10px; display: block;">
+    <a href="#" data-target="chapter-mobile-menu"
+      class="btn waves-effect waves-light sidenav-trigger hide-on-med-and-up">
+      Chapter Menu
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Sidebar for larger screens -->
+    <div class="col s12 m3 hide-on-small-only">
+      <div id="novel-sidebar" class="card">
+        <div class="card-content">
+          <span class="card-title">Chapters</span>
+          {% for chapter in chapters %}
+          <p>
+            <a href="#" data-chapter-id="{{ chapter.chapter_number }}" onclick="chapterClicked(event)">
+              Chapter {{ chapter.chapter_number }}
+            </a>
+          </p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <!-- Reader Content -->
+    <div class="col s12 m9 reader-content" id="reader-content" style="overflow-y: auto; height: 80vh">
+      {% if story.presigned_cover_url %}
+      <img src="{{story.presigned_cover_url }}">
+      {% endif %}
+      {% for chapter in chapters %}
+      <div class="section" id="chapter-{{ chapter.chapter_number }}">
+        {% if chapter.presigned_chapter_url %}
+        <img src="{{chapter.presigned_chapter_url }}">
+        {% endif %}
+        <h5>Chapter {{ chapter.chapter_number }}: {{ chapter.title }}</h5>
+        <!-- Render chapter content as markdown -->
+        <div class="chapter-content" data-markdown="{{ chapter.content | e }}"></div>
+      </div>
+      <hr />
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Custom Styles for Uniform Buttons -->
+<style>
+  .uniform-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    /* Optional: set a min-height if needed */
+    min-height: 36px;
+    text-transform: none;
+  }
+</style>
+
+<script>
+
+  // Convert chapter markdown to HTML using marked
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize Materialize sidenav for mobile menu
+    var sidenavElems = document.querySelectorAll('.sidenav');
+    M.Sidenav.init(sidenavElems);
+
+    // Convert markdown for each chapter-content element
+    var chapterContents = document.querySelectorAll('.chapter-content');
+    chapterContents.forEach(function (elem) {
+      var markdownText = elem.getAttribute('data-markdown');
+      elem.innerHTML = marked.parse(markdownText);
+    });
+  });
+
+  // Instead of tracking progress by chapter, we calculate it continuously
+  const storyId = "{{ story.id }}";
+  const scrollKey = `${storyId}_scrollPosition`;
+  const readerContent = document.getElementById("reader-content");
+
+  // Update progress bar based on current scroll position
+  function updateProgressBar() {
+    const scrollTop = readerContent.scrollTop;
+    const scrollHeight = readerContent.scrollHeight;
+    const clientHeight = readerContent.clientHeight;
+    const progressPercent = Math.min(100, Math.round((scrollTop / (scrollHeight - clientHeight)) * 100));
+    document.getElementById("reader-progress-label").textContent = `Progress: ${progressPercent}%`;
+    document.getElementById("reader-progress-bar").style.width = `${progressPercent}%`;
+  }
+
+  // Update progress continuously on scroll
+  let scrollTimeout;
+  readerContent.addEventListener("scroll", () => {
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      saveScrollPosition();
+      updateProgressBar();
+    }, 50);
+  });
+
+  // Save scroll position for restoring later
+  function saveScrollPosition() {
+    localStorage.setItem(scrollKey, readerContent.scrollTop);
+  }
+
+  // Restore scroll position on page load and update progress bar
+  window.addEventListener("load", () => {
+    const savedScrollPos = localStorage.getItem(scrollKey);
+    if (savedScrollPos) {
+      readerContent.scrollTop = savedScrollPos;
+      updateProgressBar();
+    }
+  });
+
+  // Handle chapter clicks by scrolling to the chapter and updating the progress
+  function chapterClicked(event) {
+    event.preventDefault();
+    const chapterId = event.target.dataset.chapterId;
+    const chapterElem = document.getElementById(`chapter-${chapterId}`);
+    if (chapterElem) {
+      chapterElem.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  // Toggle story flag/report
+  function toggleFlag(event) {
+    event.preventDefault();
+    const storyId = event.target.dataset.storyId;
+    fetch(`/story/flag/${storyId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(() => {
+        window.location.reload();
+      })
+  }
+
+  // Download EPUB functionality
+  function downloadEpub() {
+    fetch('/api/generate_epub', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ story_id: storyId })
+    })
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to generate EPUB");
+        return response.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'novel.epub';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to download EPUB");
+      });
+  }
+</script>
+{% endblock %}

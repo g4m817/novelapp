@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    padding-left: 8px;
+    border-left: 3px solid #bb86fc;
+    color: #e0e0e0;
+  }
+  .card.custom-card {
+    background: #1e1e1e;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-bottom: 16px;
+  }
+  .card.custom-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+  }
+  .card-image {
+    height: 160px;
+    background: linear-gradient(135deg, #8e24aa, #6a1b9a);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 12px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .card-image .card-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #fff;
+    width: 100%;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+    background:rgba(0,0,0,0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-content {
+    padding: 14px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .author {
+    font-size: 0.9rem;
+    color: #bbb;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .story-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 0.85rem;
+    margin: 6px 0;
+  }
+  .story-stats p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+  .inline-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+  }
+  .inline-icon .heart {
+    color: #e57373; /* red */
+  }
+  .inline-icon .chapters {
+    color: #64b5f6; /* blue */
+  }
+  .story-details {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+  }
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tag-label {
+    background: #2e2e2e;
+    color: #bb86fc;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tag-label:hover {
+    background: #3a3a3a;
+  }
+  .card-action {
+    padding: 0 14px 14px;
+  }
+  .card-action a {
+  display: block;      /* Makes the button take up the full width of its container */
+  width: fit-content;  /* Shrinks the button to its content */
+  margin: 0 auto;      /* Centers the button horizontally */
+  text-align: center;
+  padding: 8px 20px;
+  background: #bb86fc; /* New color for the button */
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 20px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.card-action a:hover {
+  background: #9a66d3; /* Adjust hover color if desired */
+  transform: translateY(-1px);
+}
+
+  .control-bar {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .control-bar .input-field {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+  }
+  .control-bar .input-field input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    background: #121212;
+    color: #e0e0e0;
+  }
+  .control-bar .input-field input[type="text"]::placeholder {
+    color: #757575;
+  }
+  .sort-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sort-link {
+    font-size: 0.85rem;
+    padding: 8px 14px;
+    border: 1px solid #6a1b9a;
+    border-radius: 6px;
+    background: transparent;
+    color: #e0e0e0;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .sort-link:hover,
+  .sort-link.active {
+    background: #6a1b9a;
+    transform: translateY(-1px);
+  }
+
+  /* --- Pagination --- */
+  .pagination {
+    margin: 24px 0;
+    text-align: center;
+  }
+  .pagination li {
+    display: inline-block;
+    margin: 0 3px;
+  }
+  .pagination a {
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    transition: background 0.2s ease;
+  }
+  .pagination a:hover {
+    background: #333;
+  }
+  .pagination .active a {
+    background: #6a1b9a;
+    border-color: #6a1b9a;
+  }
+</style>
+
+<!-- Spotlight Section -->
+{% if spotlight_stories and spotlight_stories|length > 0 %}
+<div class="row spotlight-section">
+  <div class="col s12">
+    <h5 class="section-title">Spotlight Stories</h5>
+  </div>
+  {% for story in spotlight_stories %}
+  <div class="col s12 m6 l4">
+    <div class="card custom-card">
+      {% if story.presigned_cover_url %}
+      <div class="card-image" style="background-image: url('{{ story.presigned_cover_url }}')">
+      {% else %}
+      <div class="card-image">
+      {% endif %}
+        <span class="card-title truncate" title="{{ story.title }}">{{ story.title }}</span>
+      </div>
+      <div class="card-content">
+        <div>
+          <p class="author truncate" title="By {{ story.author }}">By {{ story.author }}</p>
+          <div class="story-stats">
+            <p>
+              <span class="inline-icon">
+                <i class="material-icons heart" title="Favorites">favorite</i>
+              </span>
+              {{ story.favorites_count }}
+            </p>
+            <p>
+              <span class="inline-icon">
+                <i class="material-icons chapters" title="Chapters">menu_book</i>
+              </span>
+              {{ story.chapters_count }}
+            </p>
+          </div>
+          <div class="tags-container">
+            {% for tag in story.tags %}
+            <span class="tag-label" onclick="searchByTag('{{ tag.name }}')">{{ tag.name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-action">
+          <a href="{{ url_for('story_views.read_story', story_id=story.id) }}">Read Story</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Spotlight Pagination Controls -->
+{% if spotlight_pagination.has_prev or spotlight_pagination.has_next %}
+<div class="center">
+  <ul class="pagination">
+    {% if spotlight_pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('explore', spotlight_page=spotlight_pagination.prev_num) }}">« Prev</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+    {% for page_num in spotlight_pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if page_num %}
+        {% if page_num == spotlight_pagination.page %}
+        <li class="active"><a href="#!">{{ page_num }}</a></li>
+        {% else %}
+        <li class="waves-effect">
+          <a href="{{ url_for('explore', spotlight_page=page_num) }}">{{ page_num }}</a>
+        </li>
+        {% endif %}
+      {% else %}
+        <li class="disabled"><a href="#!">…</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if spotlight_pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('explore', spotlight_page=spotlight_pagination.next_num) }}">Next »</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Public Stories Search & Sort Block -->
+<div class="row">
+  <div class="section">
+    <h5 class="section-title">All Public Stories</h5>
+    <div class="control-bar">
+      <!-- Tag Filter Input (with Tagify) -->
+      <div class="tagify-container">
+        <input id="search-query" placeholder="Type some tags" />
+      </div>      
+      <!-- Sort Buttons -->
+      <div class="sort-links">
+        <a href="#" class="sort-link" data-sort-by="date" data-order="desc">Date ↓</a>
+        <a href="#" class="sort-link" data-sort-by="date" data-order="asc">Date ↑</a>
+        <a href="#" class="sort-link" data-sort-by="favorites" data-order="desc">Favs ↓</a>
+        <a href="#" class="sort-link" data-sort-by="favorites" data-order="asc">Favs ↑</a>
+        <a href="#" class="sort-link" data-sort-by="chapters" data-order="desc">Chaps ↓</a>
+        <a href="#" class="sort-link" data-sort-by="chapters" data-order="asc">Chaps ↑</a>
+      </div>
+    </div>
+    <!-- Container for AJAX-loaded public stories -->
+    <div class="row" id="filtered-stories"></div>
+    <!-- Pagination Controls for Public Stories -->
+    <div id="pagination-controls"></div>
+  </div>
+</div>
+
+<script>
+  function updateUrlParams(tags, sort_by, order) {
+    const queryParams = new URLSearchParams(window.location.search);
+    if (tags) {
+      queryParams.set('tags', tags);
+    } else {
+      queryParams.delete('tags');
+    }
+    if (sort_by) {
+      queryParams.set('sort_by', sort_by);
+    } else {
+      queryParams.delete('sort_by');
+    }
+    if (order) {
+      queryParams.set('order', order);
+    } else {
+      queryParams.delete('order');
+    }
+    const newUrl = `${window.location.pathname}?${decodeURIComponent(queryParams.toString())}`;
+    window.history.replaceState({}, '', newUrl);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var input = document.getElementById('search-query');
+    var tagify = new Tagify(input, { dropdown: { enabled: 0 } });
+    
+    tagify.on('change', debounce(function () {
+      let tags = tagify.value.map(item => item.value).join(',');
+      updatePublicStories();
+    }, 500));
+
+    document.querySelectorAll('.sort-link').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        let sort_by = this.getAttribute('data-sort-by');
+        let order = this.getAttribute('data-order');
+        let tags = tagify.value.map(item => item.value).join(',');
+        updateUrlParams(tags, sort_by, order);
+        updatePublicStories(1, sort_by, order);
+      });
+    });
+    if (window.location.search){
+      var initialTags = window.location.search.split("tags=")[1].split("&")[0].split(',').map(t => t.trim()).filter(Boolean);
+      tagify.addTags(initialTags);
+    }
+
+    
+    tagify.on('input', function (e) {
+      var value = e.detail.value;
+      fetch(`/api/tags?query=${encodeURIComponent(value)}`)
+        .then(response => response.json())
+        .then(function (suggestions) {
+          tagify.settings.whitelist = suggestions;
+          tagify.dropdown.show.call(tagify, value);
+        })
+        .catch(err => console.error(err));
+    });
+    
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    function updatePublicStories(page = 1, sort_by = null, order = null) {
+      sort_by = sort_by;
+      order = order;
+      let tags = tagify.value.map(item => item.value).join(',');
+      let url = `/api/search_public_stories?tags=${encodeURIComponent(tags)}&sort_by=${sort_by}&order=${order}&page=${page}`;
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          renderPublicStories(data);
+        })
+        .catch(err => console.error(err));
+    }
+    
+    function renderPublicStories(data) {
+      const container = document.getElementById('filtered-stories');
+      container.innerHTML = "";
+      if (data.stories.length === 0) {
+        const noStoriesP = document.createElement("p");
+        noStoriesP.textContent = "No stories found.";
+        container.appendChild(noStoriesP);
+      } else {
+        data.stories.forEach(story => {
+          const colDiv = document.createElement("div");
+          colDiv.className = "col s12 m6 l4";
+          const cardDiv = document.createElement("div");
+          cardDiv.className = "card custom-card";
+          
+          const cardImage = document.createElement("div");
+          cardImage.className = "card-image";
+          if ( story.presigned_cover_url ) {
+            cardImage.style.backgroundImage=`url('${story.presigned_cover_url}')`;
+          }
+          const imageTitle = document.createElement("span");
+          imageTitle.className = "card-title truncate";
+          imageTitle.title = story.title;
+          imageTitle.textContent = story.title;
+          cardImage.appendChild(imageTitle);
+          cardDiv.appendChild(cardImage);
+          
+          const cardContent = document.createElement("div");
+          cardContent.className = "card-content";
+          const authorP = document.createElement("p");
+          authorP.className = "author truncate";
+          authorP.title = "By " + story.author;
+          authorP.textContent = "By " + story.author;
+          cardContent.appendChild(authorP);
+          
+          const statsDiv = document.createElement("div");
+          statsDiv.className = "story-stats";
+          const favP = document.createElement("p");
+          favP.innerHTML = '<span class="inline-icon"><i class="material-icons heart" title="Favorites">favorite</i></span>' + story.favorites_count;
+          statsDiv.appendChild(favP);
+          const chaP = document.createElement("p");
+          chaP.innerHTML = '<span class="inline-icon"><i class="material-icons chapters" title="Chapters">menu_book</i></span>' + story.chapters_count;
+          statsDiv.appendChild(chaP);
+          cardContent.appendChild(statsDiv);
+          
+          const tagsDiv = document.createElement("div");
+          tagsDiv.className = "tags-container";
+          if (story.tags && story.tags.length > 0) {
+            story.tags.forEach(tag => {
+              const tagSpan = document.createElement("span");
+              tagSpan.className = "tag-label";
+              tagSpan.textContent = tag.name;
+              tagSpan.addEventListener("click", () => searchByTag(tag.name));
+              tagsDiv.appendChild(tagSpan);
+            });
+          }
+          cardContent.appendChild(tagsDiv);
+          cardDiv.appendChild(cardContent);
+          
+          const cardAction = document.createElement("div");
+          cardAction.className = "card-action";
+          const readLink = document.createElement("a");
+          readLink.href = "/story/" + story.id + "/read";
+          readLink.textContent = "Read Story";
+          cardAction.appendChild(readLink);
+          cardDiv.appendChild(cardAction);
+          
+          colDiv.appendChild(cardDiv);
+          container.appendChild(colDiv);
+        });
+      }
+      
+      const paginationContainer = document.getElementById('pagination-controls');
+      paginationContainer.innerHTML = "";
+      if (data.has_prev || data.has_next) {
+        const centerDiv = document.createElement("div");
+        centerDiv.className = "center";
+        const ul = document.createElement("ul");
+        ul.className = "pagination";
+        
+        const liPrev = document.createElement("li");
+        liPrev.className = data.has_prev ? "waves-effect" : "disabled";
+        const aPrev = document.createElement("a");
+        aPrev.href = data.has_prev ? "javascript:void(0)" : "#!";
+        aPrev.textContent = "« Prev";
+        if (data.has_prev) {
+          aPrev.addEventListener("click", () => updatePublicStories(data.prev_page));
+        }
+        liPrev.appendChild(aPrev);
+        ul.appendChild(liPrev);
+        
+        for (let i = 1; i <= data.total_pages; i++) {
+          const liPage = document.createElement("li");
+          liPage.className = (i === data.page) ? "active" : "waves-effect";
+          const aPage = document.createElement("a");
+          aPage.href = (i === data.page) ? "#!" : "javascript:void(0)";
+          aPage.textContent = i;
+          if (i !== data.page) {
+            aPage.addEventListener("click", () => updatePublicStories(i));
+          }
+          liPage.appendChild(aPage);
+          ul.appendChild(liPage);
+        }
+        
+        const liNext = document.createElement("li");
+        liNext.className = data.has_next ? "waves-effect" : "disabled";
+        const aNext = document.createElement("a");
+        aNext.href = data.has_next ? "javascript:void(0)" : "#!";
+        aNext.textContent = "Next »";
+        if (data.has_next) {
+          aNext.addEventListener("click", () => updatePublicStories(data.next_page));
+        }
+        liNext.appendChild(aNext);
+        ul.appendChild(liNext);
+        
+        centerDiv.appendChild(ul);
+        paginationContainer.appendChild(centerDiv);
+      }
+    }
+
+    tagify.on('change', debounce(function () {
+      updatePublicStories();
+      const currentParams = new URLSearchParams(window.location.search);
+      const currentSort = currentParams.get('sort_by') || 'date';
+      const currentOrder = currentParams.get('order') || 'desc';
+      let tags = tagify.value.map(item => item.value).join(',');
+      updateUrlParams(tags, currentSort, currentOrder);
+    }, 500));
+
+    document.querySelectorAll('.sort-link').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        let sort_by = this.getAttribute('data-sort-by');
+        let order = this.getAttribute('data-order');
+        updatePublicStories(1, sort_by, order);
+      });
+    });
+
+    window.searchByTag = function (tagName) {
+      let exists = tagify.value.some(item => item.value.toLowerCase() === tagName.toLowerCase());
+      if (!exists) {
+        tagify.addTags([tagName]);
+      }
+      updatePublicStories();
+    };
+
+    updatePublicStories();
+  });
+</script>
+{% endblock %}

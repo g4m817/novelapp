@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* Main Card & Global Container */
+  .card.main-card {
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    margin: 20px 0;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  h5,
+  h6 {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+
+  .meta-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .meta-toolbar .btn {
+    margin-right: 8px;
+  }
+
+  .btn.btn-credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  /* Grid layout for Characters & Locations */
+  #meta-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .meta-card {
+    border: 1px solid #333;
+    border-radius: 8px;
+    background-color: #121212;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .meta-card .input-field {
+    margin-bottom: 16px;
+  }
+
+  .meta-card .input-field input,
+  .meta-card .input-field textarea {
+    background-color: #000 !important;
+    color: #fff !important;
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #555;
+    box-sizing: border-box;
+  }
+
+  .meta-card .input-field label {
+    color: #fff;
+  }
+
+  /* Button in card action */
+  .meta-card .card-action {
+    background-color: #1a1a1a;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  .meta-card .card-action .btn {
+    background-color: #e53935;
+    color: #fff;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Create Novel</h4>
+  {% include "story/base.html" %}
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Characters &amp; Locations</h5>
+      <p class="section-info">
+        Define your characters and locations below. You can add them manually or generate them automatically.
+      </p>
+
+      <!-- Toolbar with Generate and Add Actions -->
+      <div class="meta-toolbar">
+        <div>
+          <button id="add-character" class="btn waves-effect waves-light" onclick="addCharacter()">
+            <i class="material-icons left">add</i> Add Character
+          </button>
+          <button id="add-location" class="btn waves-effect waves-light" onclick="addLocation()">
+            <i class="material-icons left">add</i> Add Location
+          </button>
+        </div>
+        <div>
+          <button class="btn btn-credit" id="gen-meta" data-story-id="{{ story.id }}" onmouseenter="showMetaCost(event)"
+            onmouseleave="hideMetaCost(event)" onclick="generateMeta(event)">
+            <i class="material-icons left">autorenew</i> Generate Characters &amp; Locations
+            <span id="predicted-meta-cost" style="margin-left: 6px;"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Meta Container: Characters & Locations in a grid -->
+      <div id="meta-container">
+        <div id="characters-container">
+          <h6>Characters</h6>
+          {% if characters and characters|length > 0 %}
+          {% for character in characters %}
+          <div class="card meta-card" data-character-id="{{ character.id }}">
+            <div class="card-content">
+              <div class="input-field">
+                <input name="character_name_{{ loop.index }}" type="text" class="validate meta-name"
+                  value="{{ character.name }}" required placeholder="Name">
+                <label>Name</label>
+              </div>
+              <div class="input-field">
+                <textarea name="character_desc_{{ loop.index }}" class="materialize-textarea meta-desc"
+                  placeholder="Description">{{ character.description }}</textarea>
+                <label>Description</label>
+              </div>
+              <div class="input-field">
+                <textarea name="character_dialogue_{{ loop.index }}" class="materialize-textarea meta-dialogue"
+                  placeholder="Example Dialogue">{{ character.example_dialogue or "" }}</textarea>
+                <label>Example Dialogue</label>
+              </div>
+            </div>
+            <div class="card-action">
+              <button onclick="deleteMeta(event, 'character')" data-story-id="{{ story.id }}" class="remove-meta btn">
+                <i class="material-icons">delete</i> Remove
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p>No characters generated.</p>
+          {% endif %}
+        </div>
+        <div id="locations-container">
+          <h6>Locations</h6>
+          {% if locations and locations|length > 0 %}
+          {% for location in locations %}
+          <div class="card meta-card" data-location-id="{{ location.id }}">
+            <div class="card-content">
+              <div class="input-field">
+                <input name="location_name_{{ loop.index }}" type="text" class="validate meta-name"
+                  value="{{ location.name }}" required placeholder="Name">
+                <label>Name</label>
+              </div>
+              <div class="input-field">
+                <textarea name="location_desc_{{ loop.index }}" class="materialize-textarea meta-desc"
+                  placeholder="Description">{{ location.description }}</textarea>
+                <label>Description</label>
+              </div>
+            </div>
+            <div class="card-action">
+              <button onclick="deleteMeta(event, 'location')" data-story-id="{{ story.id }}" class="remove-meta btn">
+                <i class="material-icons">delete</i> Remove
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p>No locations generated.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="card-action">
+      <button class="btn waves-effect waves-light" onclick="saveMeta()">Save Characters &amp; Locations</button>
+    </div>
+  </div>
+</div>
+<script>
+  function showMetaCost(event) {
+    const storyId = event.target.dataset.storyId;
+    if (storyId) {
+      fetch(`/api/predict_meta_cost/${storyId}`)
+        .then((response) => response.json())
+        .then((data) => {
+          event.target.querySelector("#predicted-meta-cost").innerText =
+            data.total_predicted_credit_cost;
+        });
+    }
+  }
+
+  function hideMetaCost(event) {
+    event.target.querySelector("#predicted-meta-cost").innerText = "";
+  }
+
+  function generateMeta(event) {
+    // Clear existing meta content using DOM methods.
+    const metaContainer = document.getElementById("meta-container");
+    while (metaContainer.firstChild) {
+      metaContainer.removeChild(metaContainer.firstChild);
+    }
+    const storyId = event.target.dataset.storyId;
+    fetch("/api/generate_meta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId }),
+    });
+  }
+
+  function addCharacter() {
+    const container = document.getElementById("characters-container");
+    if (!container) return;
+    const card = document.createElement("div");
+    card.className = "card meta-card";
+
+    // Create card content section.
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+
+    // Name field.
+    const nameField = document.createElement("div");
+    nameField.className = "input-field";
+    const nameInput = document.createElement("input");
+    nameInput.name = "character_name_new";
+    nameInput.type = "text";
+    nameInput.classList.add("validate", "meta-name");
+    nameInput.required = true;
+    nameInput.placeholder = "Name";
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "Name";
+    nameField.appendChild(nameInput);
+    nameField.appendChild(nameLabel);
+
+    // Description field.
+    const descField = document.createElement("div");
+    descField.className = "input-field";
+    const descTextarea = document.createElement("textarea");
+    descTextarea.name = "character_desc_new";
+    descTextarea.classList.add("materialize-textarea", "meta-desc");
+    descTextarea.placeholder = "Description";
+    const descLabel = document.createElement("label");
+    descLabel.textContent = "Description";
+    descField.appendChild(descTextarea);
+    descField.appendChild(descLabel);
+
+    // Example Dialogue field.
+    const dialogueField = document.createElement("div");
+    dialogueField.className = "input-field";
+    const dialogueTextarea = document.createElement("textarea");
+    dialogueTextarea.name = "character_dialogue_new";
+    dialogueTextarea.classList.add("materialize-textarea", "meta-dialogue");
+    dialogueTextarea.placeholder = "Example Dialogue";
+    const dialogueLabel = document.createElement("label");
+    dialogueLabel.textContent = "Example Dialogue";
+    dialogueField.appendChild(dialogueTextarea);
+    dialogueField.appendChild(dialogueLabel);
+
+    cardContent.appendChild(nameField);
+    cardContent.appendChild(descField);
+    cardContent.appendChild(dialogueField);
+
+    // Create card action section.
+    const cardAction = document.createElement("div");
+    cardAction.className = "card-action";
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-meta btn";
+    removeBtn.dataset.storyId = "{{ story.id }}";
+    removeBtn.innerHTML = `<i class="material-icons">delete</i> Remove`;
+    removeBtn.addEventListener("click", function (e) {
+      deleteMeta(e, "character");
+    });
+    cardAction.appendChild(removeBtn);
+
+    card.appendChild(cardContent);
+    card.appendChild(cardAction);
+    container.appendChild(card);
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function addLocation() {
+    const container = document.getElementById("locations-container");
+    if (!container) return;
+    const card = document.createElement("div");
+    card.className = "card meta-card";
+
+    // Create card content section.
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+
+    // Name field.
+    const nameField = document.createElement("div");
+    nameField.className = "input-field";
+    const nameInput = document.createElement("input");
+    nameInput.name = "location_name_new";
+    nameInput.type = "text";
+    nameInput.classList.add("validate", "meta-name");
+    nameInput.required = true;
+    nameInput.placeholder = "Name";
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "Name";
+    nameField.appendChild(nameInput);
+    nameField.appendChild(nameLabel);
+
+    // Description field.
+    const descField = document.createElement("div");
+    descField.className = "input-field";
+    const descTextarea = document.createElement("textarea");
+    descTextarea.name = "location_desc_new";
+    descTextarea.classList.add("materialize-textarea", "meta-desc");
+    descTextarea.placeholder = "Description";
+    const descLabel = document.createElement("label");
+    descLabel.textContent = "Description";
+    descField.appendChild(descTextarea);
+    descField.appendChild(descLabel);
+
+    cardContent.appendChild(nameField);
+    cardContent.appendChild(descField);
+
+    // Create card action section.
+    const cardAction = document.createElement("div");
+    cardAction.className = "card-action";
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-meta btn";
+    removeBtn.dataset.storyId = "{{ story.id }}";
+    removeBtn.innerHTML = `<i class="material-icons">delete</i> Remove`;
+    removeBtn.addEventListener("click", function (e) {
+      deleteMeta(e, "location");
+    });
+    cardAction.appendChild(removeBtn);
+
+    card.appendChild(cardContent);
+    card.appendChild(cardAction);
+    container.appendChild(card);
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function deleteMeta(e, type) {
+    const row = e.target.closest(".meta-card");
+    if (row) {
+      row.remove();
+      saveMeta();
+    }
+  }
+
+  function saveMeta() {
+    const characters = [];
+    document.querySelectorAll("#characters-container .meta-card").forEach(function (row) {
+      const nameEl = row.querySelector(".meta-name");
+      const descEl = row.querySelector(".meta-desc");
+      const dialogueEl = row.querySelector(".meta-dialogue");
+      const name = nameEl ? nameEl.value : "";
+      const description = descEl ? descEl.value : "";
+      const example_dialogue = dialogueEl ? dialogueEl.value : "";
+      characters.push({ name: name, description: description, example_dialogue: example_dialogue });
+    });
+    const locations = [];
+    document.querySelectorAll("#locations-container .meta-card").forEach(function (row) {
+      const nameEl = row.querySelector(".meta-name");
+      const descEl = row.querySelector(".meta-desc");
+      const name = nameEl ? nameEl.value : "";
+      const description = descEl ? descEl.value : "";
+      locations.push({ name: name, description: description });
+    });
+    fetch("/api/update_meta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        story_id: "{{ story.id }}",
+        characters: characters,
+        locations: locations,
+      }),
+    });
+  }
+
+  socket.on("meta_generated", function (data) {
+    if (data.story_id != "{{ story.id }}") return;
+    const metaContainer = document.getElementById("meta-container");
+    if (!metaContainer) return;
+    // Clear container using DOM removal.
+    while (metaContainer.firstChild) {
+      metaContainer.removeChild(metaContainer.firstChild);
+    }
+
+    // Create Characters container.
+    const charactersContainer = document.createElement("div");
+    charactersContainer.id = "characters-container";
+    const charHeader = document.createElement("h6");
+    charHeader.textContent = "Characters";
+    charactersContainer.appendChild(charHeader);
+
+    if (data.meta && data.meta.characters && data.meta.characters.length > 0) {
+      data.meta.characters.forEach(function (char, index) {
+        const card = document.createElement("div");
+        card.className = "card meta-card";
+        card.dataset.characterId = char.id;
+
+        const cardContent = document.createElement("div");
+        cardContent.className = "card-content";
+
+        const nameField = document.createElement("div");
+        nameField.className = "input-field";
+        const nameInput = document.createElement("input");
+        nameInput.name = `character_name_${index}`;
+        nameInput.type = "text";
+        nameInput.classList.add("validate", "meta-name");
+        nameInput.required = true;
+        nameInput.placeholder = "Name";
+        nameInput.value = char.name;
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Name";
+        nameField.appendChild(nameInput);
+        nameField.appendChild(nameLabel);
+
+        const descField = document.createElement("div");
+        descField.className = "input-field";
+        const descTextarea = document.createElement("textarea");
+        descTextarea.name = `character_desc_${index}`;
+        descTextarea.classList.add("materialize-textarea", "meta-desc");
+        descTextarea.placeholder = "Description";
+        descTextarea.value = char.description;
+        const descLabel = document.createElement("label");
+        descLabel.textContent = "Description";
+        descField.appendChild(descTextarea);
+        descField.appendChild(descLabel);
+
+        const dialogueField = document.createElement("div");
+        dialogueField.className = "input-field";
+        const dialogueTextarea = document.createElement("textarea");
+        dialogueTextarea.name = `character_dialogue_${index}`;
+        dialogueTextarea.classList.add("materialize-textarea", "meta-dialogue");
+        dialogueTextarea.placeholder = "Example Dialogue";
+        dialogueTextarea.value = char.example_dialogue || "";
+        const dialogueLabel = document.createElement("label");
+        dialogueLabel.textContent = "Example Dialogue";
+        dialogueField.appendChild(dialogueTextarea);
+        dialogueField.appendChild(dialogueLabel);
+
+        cardContent.appendChild(nameField);
+        cardContent.appendChild(descField);
+        cardContent.appendChild(dialogueField);
+
+        const cardAction = document.createElement("div");
+        cardAction.className = "card-action";
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-meta btn";
+        removeBtn.dataset.storyId = "{{ story.id }}";
+        removeBtn.innerHTML = `<i class="material-icons">delete</i> Remove`;
+        removeBtn.addEventListener("click", function (e) {
+          deleteMeta(e, "character");
+        });
+        cardAction.appendChild(removeBtn);
+
+        card.appendChild(cardContent);
+        card.appendChild(cardAction);
+        charactersContainer.appendChild(card);
+      });
+    } else {
+      const p = document.createElement("p");
+      p.textContent = "No characters generated.";
+      charactersContainer.appendChild(p);
+    }
+
+    // Create Locations container.
+    const locationsContainer = document.createElement("div");
+    locationsContainer.id = "locations-container";
+    const locHeader = document.createElement("h6");
+    locHeader.textContent = "Locations";
+    locationsContainer.appendChild(locHeader);
+
+    if (data.meta && data.meta.locations && data.meta.locations.length > 0) {
+      data.meta.locations.forEach(function (loc, index) {
+        const card = document.createElement("div");
+        card.className = "card meta-card";
+        card.dataset.locationId = loc.id;
+
+        const cardContent = document.createElement("div");
+        cardContent.className = "card-content";
+
+        const nameField = document.createElement("div");
+        nameField.className = "input-field";
+        const nameInput = document.createElement("input");
+        nameInput.name = `location_name_${index}`;
+        nameInput.type = "text";
+        nameInput.classList.add("validate", "meta-name");
+        nameInput.required = true;
+        nameInput.placeholder = "Name";
+        nameInput.value = loc.name;
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Name";
+        nameField.appendChild(nameInput);
+        nameField.appendChild(nameLabel);
+
+        const descField = document.createElement("div");
+        descField.className = "input-field";
+        const descTextarea = document.createElement("textarea");
+        descTextarea.name = `location_desc_${index}`;
+        descTextarea.classList.add("materialize-textarea", "meta-desc");
+        descTextarea.placeholder = "Description";
+        descTextarea.value = loc.description;
+        const descLabel = document.createElement("label");
+        descLabel.textContent = "Description";
+        descField.appendChild(descTextarea);
+        descField.appendChild(descLabel);
+
+        cardContent.appendChild(nameField);
+        cardContent.appendChild(descField);
+
+        const cardAction = document.createElement("div");
+        cardAction.className = "card-action";
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-meta btn";
+        removeBtn.dataset.storyId = "{{ story.id }}";
+        removeBtn.innerHTML = `<i class="material-icons">delete</i> Remove`;
+        removeBtn.addEventListener("click", function (e) {
+          deleteMeta(e, "location");
+        });
+        cardAction.appendChild(removeBtn);
+
+        card.appendChild(cardContent);
+        card.appendChild(cardAction);
+        locationsContainer.appendChild(card);
+      });
+    } else {
+      const p = document.createElement("p");
+      p.textContent = "No locations generated.";
+      locationsContainer.appendChild(p);
+    }
+
+    metaContainer.appendChild(charactersContainer);
+    metaContainer.appendChild(locationsContainer);
+  });
+</script>
+{% endblock %}

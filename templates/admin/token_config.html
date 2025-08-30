@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %} {% block admin_content %}
+<h4>OpenAI Token Cost</h4>
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">Cost Configuration</span>
+    <form action="{{ url_for('admin.update_token_config') }}" method="POST">
+      <div class="input-field">
+        <input type="text" name="cost_per_token" value="{{ tokenCostConfigs.cost_per_credit }}" required />
+        <label for="cost_per_token">Cost Per Token</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="cost_per_1m_tokens_input" value="{{ tokenCostConfigs.cost_per_1m_input }}" required />
+        <label for="cost_per_1m_tokens_input">Cost Per 1M Input Tokens</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="cost_per_1m_tokens_output" value="{{ tokenCostConfigs.cost_per_1m_output }}"
+          required />
+        <label for="cost_per_1m_tokens_output">Cost Per 1M Output Tokens</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="o1_cost_per_token" value="{{ tokenCostConfigs.o1_cost_per_credit }}" required />
+        <label for="o1_cost_per_token">O1 Cost Per Token</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="o1_cost_per_1m_tokens_input" value="{{ tokenCostConfigs.o1_cost_per_1m_input }}"
+          required />
+        <label for="o1_cost_per_1m_tokens_input">O1 Cost Per 1M Input Tokens</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="o1_cost_per_1m_tokens_output" value="{{ tokenCostConfigs.o1_cost_per_1m_output }}"
+          required />
+        <label for="o1_cost_per_1m_tokens_output">O1 Cost Per 1M Output Tokens</label>
+      </div>
+      <div class="input-field">
+        <input type="text" name="dall_e_price_per_image" value="{{ tokenCostConfigs.dall_e_price_per_image }}"
+          required />
+        <label for="dall_e_price_per_image">Cost Per Image</label>
+      </div>
+      <button type="submit">Update</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

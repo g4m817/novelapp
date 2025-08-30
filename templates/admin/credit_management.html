@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Credit Management</h4>
+<!-- Adjust Credit Configuration -->
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">Credit Configuration</span>
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Modifier</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for config in configs %}
+        <tr>
+          <td>{{ config.action }}</td>
+          <td>{{ config.modifier }}</td>
+          <td>
+            <form action="{{ url_for('admin.update_credit_config') }}" method="POST">
+              <input type="hidden" name="action" value="{{ config.action }}" />
+              <input type="hidden" name="type" value="{{ config.type }}" />
+              <div class="input-field">
+                <input type="number" name="modifier" value="{{ config.modifier }}" required style="width: 100px" />
+              </div>
+              <button type="submit">Update</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Adjust User Credits -->
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">User Credits</span>
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Credits</th>
+          <th>Adjust Credits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>{{ u.role }}</td>
+          <td>{{ u.credits }}</td>
+          <td>
+            <form action="{{ url_for('admin.adjust_credits', user_id=u.id) }}" method="POST">
+              <div class="input-field">
+                <select name="type" class="browser-default">
+                  <option value="text">text</option>
+                  <option value="image">image</option>
+                  <option value="audio">audio</option>
+                </select>
+                <input type="number" name="credits" value="{{ u.text_credits }}" required style="width: 100px" />
+              </div>
+              <button type="submit">Set</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

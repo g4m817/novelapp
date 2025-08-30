@@ -1,0 +1,111 @@
+{% extends "admin/base.html" %} {% block admin_content %}
+<h4>Manage Tags</h4>
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">Add a New Tag</span>
+    <form action="{{ url_for('admin.tags') }}" method="POST">
+      <div class="input-field">
+        <input id="tag-name" type="text" name="name" required />
+        <label for="tag-name">Tag Name</label>
+      </div>
+      <div class="input-field">
+        <textarea id="tag-description" name="description" class="materialize-textarea"></textarea>
+        <label for="tag-description">Tag Description</label>
+      </div>
+      <button type="submit">Add Tag</button>
+    </form>
+  </div>
+  <div class="card-content">
+    <span class="card-title">Existing Tags</span>
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Actions</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tag in tags %}
+        <tr>
+          <td colspan="4">
+            <form id="edit-tag-form-{{ tag.id }}" action="{{ url_for('admin.edit_tag', tag_id=tag.id) }}" method="POST">
+              <input type="hidden" name="tag_id" value="{{ tag.id }}" />
+              <table>
+                <tr>
+                  <td>{{ tag.id }}</td>
+                  <td>
+                    <span class="display-name">{{ tag.name }}</span>
+                    <div class="input-field">
+                      <input type="text" name="name" value="{{ tag.name }}" class="edit-name" style="display: none" />
+                    </div>
+                  </td>
+                  <td>
+                    <span class="display-desc">{{ tag.description }}</span>
+                    <div class="input-field">
+                      <textarea name="description" class="edit-desc"
+                        style="display: none">{{ tag.description }}</textarea>
+                    </div>
+                  </td>
+                  <td>
+                    <button type="button" class="edit-toggle" data-tag-id="{{ tag.id }}" onclick="toggleEdit(event)">
+                      Edit
+                    </button>
+                    <button type="submit" class="save-btn" style="display: none">
+                      Save
+                    </button>
+                    <button type="button" class="cancel-btn" data-tag-id="{{ tag.id }}" onclick="cancelEdit(event)"
+                      style="display: none">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              </table>
+            </form>
+          </td>
+          <td>
+            <form action="{{ url_for('admin.delete_tag', tag_id=tag.id) }}" method="POST" style="display: inline">
+              <button type="submit" onclick="return confirm('Are you sure you want to delete this tag?');">
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  function toggleEdit(event) {
+    var tagId = event.target.dataset.tagId;
+    var form = document.querySelector(`#edit-tag-form-${tagId}`);
+    form.querySelector(".display-name").style.display = "none";
+    form.querySelector(".display-desc").style.display = "none";
+    form.querySelector(".edit-name").style.display = "inline-block";
+    form.querySelector(".edit-desc").style.display = "inline-block";
+    event.target.style.display = "none";
+    form.querySelector(".save-btn").style.display = "inline-block";
+    form.querySelector(".cancel-btn").style.display = "inline-block";
+  }
+  function cancelEdit(event) {
+    var tagId = event.target.dataset.tagId;
+    var form = document.querySelector(`#edit-tag-form-${tagId}`);
+    form.querySelector(".edit-name").style.display = "none";
+    form.querySelector(".edit-desc").style.display = "none";
+    form.querySelector(".display-name").style.display = "inline";
+    form.querySelector(".display-desc").style.display = "inline";
+    form.querySelector(".edit-name").value = form
+      .querySelector(".display-name")
+      .innerText.trim();
+    form.querySelector(".edit-desc").value = form
+      .querySelector(".display-desc")
+      .innerText.trim();
+    form.querySelector(".edit-toggle").style.display = "inline-block";
+    form.querySelector(".save-btn").style.display = "none";
+    form.querySelector(".cancel-btn").style.display = "none";
+  }
+</script>
+{% endblock %}

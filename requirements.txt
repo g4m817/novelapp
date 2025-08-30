@@ -1,0 +1,13 @@
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+Flask-Bcrypt
+openai
+celery
+redis
+flask-socketio
+eventlet
+tiktoken
+pip_system_certs
+stripe
+boto3

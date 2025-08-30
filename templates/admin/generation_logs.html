@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Generation Logs</h4>
+
+<form method="GET" action="{{ url_for('admin_views.generation_logs') }}">
+  <div>
+    <label for="search_by">Search by:</label>
+    <input type="text" name="q" placeholder="Search..." value="{{ q }}">
+    <button type="submit" class="btn">Search</button>
+  </div>
+</form>
+
+<table class="striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Task ID</th>
+      <th>Username</th>
+      <th>Type</th>
+      <th>Timestamp</th>
+      <th>Predicted Cost</th>
+      <th>Real Cost</th>
+      <th>Status</th>
+      <th>Error Message</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.id }}</td>
+      <td>{{ log.task_id }}</td>
+      <td>{{ log.user_id }}</td>
+      <td>{{ log.generation_type }}</td>
+      <td>{{ log.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+      <td>{{ log.predicted_cost or "N/A" }}</td>
+      <td>{{ log.real_cost or "N/A" }}</td>
+      <td>{{ log.status }}</td>
+      <td>{{ log.error_message or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination Controls -->
+<div class="center">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('admin_views.generation_logs', page=pagination.prev_num, q=q) }}">« Prev</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+    {% if page_num %}
+    {% if page_num == pagination.page %}
+    <li class="active"><a href="#!">{{ page_num }}</a></li>
+    {% else %}
+    <li class="waves-effect"><a href="{{ url_for('admin_views.generation_logs', page=page_num, q=q) }}">{{ page_num
+        }}</a></li>
+    {% endif %}
+    {% else %}
+    <li class="disabled"><a href="#!">…</a></li>
+    {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('admin_views.generation_logs', page=pagination.next_num, q=q) }}">Next »</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+{% endblock %}

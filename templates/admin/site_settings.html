@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<div>
+  <form action="{{ url_for('admin.update_site_config') }}" method="POST">
+    <div>
+      <label>
+        <input type="checkbox" class="filled-in" name="registration_disabled" value="1" {% if site_config and
+          site_config.registration_disabled %}checked{% endif %}>
+        <span>Registration Disabled</span>
+      </label>
+      <div>
+        <label>
+          <input type="checkbox" class="filled-in" name="maintenance_mode" value="1" {% if site_config and
+            site_config.maintenance_mode %}checked{% endif %}>
+          <span>Maintenance Mode</span>
+        </label>
+      </div>
+      <button type="submit" class="btn-small waves-effect waves-light purple">Update Settings</button>
+  </form>
+</div>
+{% endblock %}

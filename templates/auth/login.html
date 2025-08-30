@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card page active">
+  <div class="row center">
+    <form class="col s12" method="POST">
+      <h4>Login</h4>
+      {% if error %}
+      <p class="red-text">{{ error }}</p>
+      {% endif %}
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      {% for message in messages %}
+      <p class="red-text">{{ message }}</p>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+      <div class="row">
+        <div class="input-field col s11">
+          <input id="username" name="username" type="text" required />
+          <label for="username">Username</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s11">
+          <input id="password" name="password" type="password" required />
+          <label for="password">Password</label>
+        </div>
+      </div>
+      <div class="row center">
+        <a href="{{ url_for('auth_views.forgot_password') }}" class="btn waves-effect waves-light purple">
+          Forgot Password?
+        </a>
+      </div>
+      <button class="btn waves-effect waves-light purple" type="submit">
+        Login
+      </button>
+    </form>
+  </div>
+
+  {% if request.args.get('username') %}
+  <div class="row">
+    <form method="GET" action="{{ url_for('auth.resend_verification') }}">
+      <input type="hidden" name="username" value="{{ request.args.get('username') }}">
+      <button class="btn waves-effect waves-light purple" type="submit">
+        Resend Verification Email
+      </button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

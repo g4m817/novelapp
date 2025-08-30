@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Mobile Sidenav Menu (for small screens) -->
+<ul class="sidenav" id="mobile-menu">
+  <li class="{% if request.endpoint == 'admin_views.dashboard' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.site_settings' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.site_settings') }}">Settings</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.tags' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.tags') }}">Tags</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.stories' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.stories') }}">Stories</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.flagged_stories' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.flagged_stories') }}">Flagged Stories</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.token_config' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.token_config') }}">Tokens</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.credit_management' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.credit_management') }}">Credits</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.news_list' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.news_list') }}">News</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.credit_packages' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.credit_packages') }}">STP Packages</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.analytics' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.analytics') }}">Analytics</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.role_management' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.role_management') }}">Roles</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.user_management' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.user_management') }}">Users</a>
+  </li>
+  <li class="{% if request.endpoint == 'admin_views.generation_logs' %}menu-active{% endif %}">
+    <a href="{{ url_for('admin_views.generation_logs') }}">Logs</a>
+  </li>
+</ul>
+
+<div style="margin-top:15px;">
+  <a href="#" data-target="mobile-menu" class="btn waves-effect waves-light sidenav-trigger hide-on-med-and-up">
+    Admin Menu
+  </a>
+</div>
+
+<div class="content-with-sidebar-container">
+  <!-- Fixed sidebar menu for larger screens -->
+  <div class="menu hide-on-small-only">
+    <ul>
+      <li class="{% if request.endpoint == 'admin_views.dashboard' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.dashboard') }}">Dashboard</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.site_settings' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.site_settings') }}">Settings</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.tags' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.tags') }}">Tags</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.stories' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.stories') }}">Stories</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.flagged_stories' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.flagged_stories') }}">Flagged Stories</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.token_config' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.token_config') }}">Tokens</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.credit_management' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.credit_management') }}">Credits</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.news_list' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.news_list') }}">News</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.credit_packages' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.credit_packages') }}">STP Packages</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.analytics' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.analytics') }}">Analytics</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.role_management' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.role_management') }}">Roles</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.user_management' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.user_management') }}">Users</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.generation_logs' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.generation_logs') }}">Logs</a>
+      </li>
+      <li class="{% if request.endpoint == 'admin_views.feedback_list' %}menu-active{% endif %}">
+        <a href="{{ url_for('admin_views.feedback_list') }}">Feedback</a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main content area -->
+  <div class="content">
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

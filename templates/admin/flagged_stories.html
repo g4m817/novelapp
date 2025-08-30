@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Flagged Stories</h4>
+<table class="striped">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Created At</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for story in stories %}
+    <tr>
+      <td>{{ story.title }}</td>
+      <td>{{ story.author }}</td>
+      <td>{{ story.created_at }}</td>
+      <td>
+        <form action="{{ url_for('admin.unflag_story', story_id=story.id) }}" method="POST">
+          <button type="submit">Unflag Story</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

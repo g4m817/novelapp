@@ -1,0 +1,113 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Manage Roles</h4>
+<!-- Create Role Form -->
+<form action="{{ url_for('admin.create_role') }}" method="POST">
+  <div class="input-field">
+    <label>Role Name</label>
+    <input type="text" name="role_name" required />
+  </div>
+  <div class="input-field">
+    <label>Default Text Credits</label>
+    <input type="number" name="default_text" value="0" required />
+  </div>
+  <div class="input-field">
+    <label>Default Image Credits</label>
+    <input type="number" name="default_image" value="0" required />
+  </div>
+  <div class="input-field">
+    <label>Default Audio Credits</label>
+    <input type="number" name="default_audio" value="0" required />
+  </div>
+  <div class="input-field">
+    <label>Cost</label>
+    <input type="text" name="cost" value="0" required />
+  </div>
+  <button class="btn waves-effect waves-light purple" type="submit">Create Role</button>
+</form>
+
+<!-- Roles Table -->
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Role Name</th>
+      <th>Text Credits</th>
+      <th>Image Credits</th>
+      <th>Audio Credits</th>
+      <th>Cost</th>
+      <th>Protected</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for role in roles %}
+    <tr>
+      <td>{{ role.id }}</td>
+      <td>{{ role.name }}</td>
+      <td>{{ role.default_text_credits }}</td>
+      <td>{{ role.default_image_credits }}</td>
+      <td>{{ role.default_audio_credits }}</td>
+      <td>{{ role.cost }}</td>
+      <td>{{ "Yes" if role.protected else "No" }}</td>
+      <td>
+        <button type="button" data-role-id="{{role.id}}" onclick="toggleEditForm(event)">
+          Edit
+        </button>
+        {% if not role.protected %}
+        <form action="{{ url_for('admin.delete_role', role_id=role.id) }}" method="POST" style="display:inline;">
+          <button type="submit" onclick="return confirm('Delete this role?')">
+            Delete
+          </button>
+        </form>
+        {% else %}
+        <em>Cannot delete</em>
+        {% endif %}
+      </td>
+    </tr>
+    <!-- Hidden Edit Form Row -->
+    <tr id="edit-form-{{ role.id }}" style="display: none;">
+      <td colspan="8">
+        <form action="{{ url_for('admin.edit_role', role_id=role.id) }}" method="POST">
+          <div class="input-field">
+            <label>Role Name</label>
+            <input type="text" name="role_name" value="{{ role.name }}" required />
+          </div>
+          <div class="input-field">
+            <label>Default Text Credits</label>
+            <input type="number" name="default_text" value="{{ role.default_text_credits }}" required />
+          </div>
+          <div class="input-field">
+            <label>Default Image Credits</label>
+            <input type="number" name="default_image" value="{{ role.default_image_credits }}" required />
+          </div>
+          <div class="input-field">
+            <label>Default Audio Credits</label>
+            <input type="number" name="default_audio" value="{{ role.default_audio_credits }}" required />
+          </div>
+          <div class="input-field">
+            <label>Cost</label>
+            <input type="text" name="cost" value="{{ role.cost }}" required />
+          </div>
+          <button class="btn waves-effect waves-light" type="submit">Update Role</button>
+          <button class="btn waves-effect waves-light grey" type="button"
+            onclick="toggleEditForm({{ role.id }})">Cancel</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  function toggleEditForm(event) {
+    const roleId = event.target.dataset.roleId;
+    var formRow = document.getElementById('edit-form-' + roleId);
+    if (formRow.style.display === 'none' || formRow.style.display === '') {
+      formRow.style.display = 'table-row';
+    } else {
+      formRow.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}

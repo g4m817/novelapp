@@ -1,0 +1,765 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* Main Card & Global Container */
+  .card.main-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    background-color: #1e1e1e;
+    margin: 20px 0;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  h5 {
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+
+  /* Toolbar styling */
+  .desc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .desc-toolbar .btn {
+    margin-right: 8px;
+  }
+
+  .btn.btn-credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Chapter Guides Styling */
+  .arc-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .arc-list li {
+    cursor: move;
+    padding: 5px 0;
+    border-bottom: 1px solid #333;
+    position: relative;
+  }
+
+  .arc-list li:last-child {
+    border-bottom: none;
+  }
+
+  .arc-content {
+    margin-bottom: 5px;
+  }
+
+  .arc-meta {
+    font-size: 0.9em;
+    color: #ccc;
+  }
+
+  .edit-btn,
+  .delete-btn,
+  .save-btn,
+  .cancel-btn {
+    margin-left: 5px;
+    vertical-align: middle;
+  }
+
+  .new-arc-label {
+    font-style: italic;
+    color: #aaa;
+  }
+
+  .inline-edit-input {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    background-color: transparent;
+    color: #fff;
+    margin: 3px 0;
+    width: 90%;
+  }
+
+  .tagify {
+    background-color: #1e1e1e;
+    color: #fff;
+    border: 1px solid #ccc;
+    margin: 3px 0;
+  }
+
+  /* Description Card Styling */
+  .arc-card {
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background-color: #121212;
+  }
+
+  .arc-card .card-content {
+    padding: 16px;
+  }
+
+  .arc-card .input-field input {
+    background-color: #000 !important;
+    color: #fff !important;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #555;
+    box-sizing: border-box;
+  }
+
+  .arc-card .input-field label {
+    color: #fff;
+  }
+
+  .arc-card .input-field input::placeholder {
+    color: #bbb;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Chapter Guides</h4>
+  {% include "story/base.html" %}
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Chapter Guide</h5>
+      <p class="section-info">
+        Manage your Chapter guides.
+      </p>
+
+      <!-- Toolbar with Generate Button -->
+      <div class="row">
+        <button id="gen-detailed-arcs" data-story-id="{{ story.id }}" onmouseenter="showDetailedArcsCost(event)"
+          onmouseleave="hideDetailedArcsCost(event)" onclick="generateDetailedArcs(event)"
+          class="btn right btn-credit purple">
+          <i class="material-icons left">autorenew</i>
+          Generate Chapter Guides
+          <span id="predicted-detailed-arcs-cost" style="margin-left: 10px;"></span>
+        </button>
+      </div>
+
+      <!-- Existing Chapter Guides Container -->
+      <div id="existing-arcs-container">
+        {% if chapter_guide %}
+        {% for chapter_title, mappings in chapter_guide.items() %}
+        <div class="card arc-card" data-chapter="{{ chapter_title }}">
+          <div class="card-content">
+            <h5 class="chapter-title">{{ chapter_title }}</h5>
+            <ul class="arc-list" id="arc-list-{{ chapter_title|replace(' ', '-') }}"
+              data-chapter-title="{{ chapter_title }}">
+              {% for mapping in mappings %}
+              <li data-mapping-id="{{ mapping.id }}" data-part-text="{{ mapping.arc_text|e }}"
+                data-characters="{{ mapping.characters | join(', ') }}"
+                data-locations="{{ mapping.locations | join(', ') }}" data-chapter-title="{{ chapter_title }}"
+                data-part-index="{{ mapping.arc }}">
+                <div class="arc-content">
+                  <div class="arc-text">{{ mapping.arc_text }}</div>
+                  <div class="arc-meta">
+                    <span class="arc-characters">Characters: {{ mapping.characters | join(', ') }}</span>
+                    <br>
+                    <span class="arc-locations">Locations: {{ mapping.locations | join(', ') }}</span>
+                  </div>
+                </div>
+                <button class="btn tiny edit-btn" onclick="editMapping(this)">
+                  <i class="material-icons">edit</i>
+                </button>
+                <button class="btn tiny red delete-btn" onclick="deleteMapping(this)">
+                  <i class="material-icons">delete</i>
+                </button>
+              </li>
+              {% endfor %}
+            </ul>
+            <button class="btn" onclick="addNewPart('{{ chapter_title }}')">
+              <i class="material-icons left">add</i> Add New Part
+            </button>
+          </div>
+          <div class="card-action">
+            <span class="new-arc-label">Generated</span>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No Chapter Guides found. Use the generation feature to create Chapter Guides.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include SortableJS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  // Global arrays for available characters and locations.
+  let availableCharacters = [];
+  let availableLocations = [];
+
+  // On document ready, fetch available characters/locations and initialize Sortable.
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch(`/api/list_characters/{{ story.id }}`)
+      .then(response => response.json())
+      .then(data => { availableCharacters = data; })
+      .catch(err => console.error(err));
+    fetch(`/api/list_locations/{{ story.id }}`)
+      .then(response => response.json())
+      .then(data => { availableLocations = data; })
+      .catch(err => console.error(err));
+
+    document.querySelectorAll('.arc-list').forEach(ul => {
+      initSortable(ul.id);
+    });
+  });
+
+  // --- Cost and Generation Functions ---
+  function showDetailedArcsCost(event) {
+    const storyId = event.target.dataset.storyId;
+    if (storyId) {
+      fetch(`/api/predict_chapter_guide_cost/${storyId}`)
+        .then(response => response.json())
+        .then(data => {
+          event.target.querySelector("#predicted-detailed-arcs-cost").innerText =
+            data.total_predicted_credit_cost || "";
+        })
+        .catch(err => console.error(err));
+    }
+  }
+  function hideDetailedArcsCost(event) {
+    event.target.querySelector("#predicted-detailed-arcs-cost").innerText = "";
+  }
+  function generateDetailedArcs(event) {
+    const storyId = event.target.dataset.storyId;
+    fetch('/api/generate_chapter_guide', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "queued") {
+          const container = document.getElementById("existing-arcs-container");
+          while (container.firstChild) {
+            container.removeChild(container.firstChild);
+          }
+        }
+      });
+  }
+
+  // --- WebSocket Event: Chapter Guides Generated ---
+  socket.on("chapter_guide_generated", function (data) {
+    if (data.story_id != "{{ story.id }}") return;
+    const container = document.getElementById("existing-arcs-container");
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    const detailedArcs = data.chapter_guide;
+    for (let chapterTitle in detailedArcs) {
+      if (detailedArcs.hasOwnProperty(chapterTitle)) {
+        const mappings = detailedArcs[chapterTitle];
+        const card = document.createElement("div");
+        card.className = "card arc-card";
+
+        // Build card-content section.
+        const cardContent = document.createElement("div");
+        cardContent.className = "card-content";
+
+        const chapterHeader = document.createElement("h5");
+        chapterHeader.className = "chapter-title";
+        chapterHeader.textContent = chapterTitle;
+        cardContent.appendChild(chapterHeader);
+
+        // Build the list of arc mappings.
+        const arcList = document.createElement("ul");
+        arcList.className = "arc-list";
+        const listId = "arc-list-" + chapterTitle.replace(/\s/g, '-');
+        arcList.id = listId;
+        arcList.dataset.chapterTitle = chapterTitle;
+
+        mappings.forEach(function (mapping) {
+          const li = document.createElement("li");
+          li.dataset.mappingId = mapping.id;
+          li.dataset.partText = mapping.arc_text;
+          li.dataset.characters = mapping.characters.join(', ');
+          li.dataset.locations = mapping.locations.join(', ');
+          li.dataset.chapterTitle = chapterTitle;
+          li.dataset.partIndex = mapping.arc;
+
+          // Arc content
+          const arcContent = document.createElement("div");
+          arcContent.className = "arc-content";
+          const arcTextDiv = document.createElement("div");
+          arcTextDiv.className = "arc-text";
+          arcTextDiv.textContent = mapping.arc_text;
+          arcContent.appendChild(arcTextDiv);
+          const arcMetaDiv = document.createElement("div");
+          arcMetaDiv.className = "arc-meta";
+          const spanChars = document.createElement("span");
+          spanChars.className = "arc-characters";
+          spanChars.textContent = "Characters: " + mapping.characters.join(', ');
+          arcMetaDiv.appendChild(spanChars);
+          arcMetaDiv.appendChild(document.createElement("br"));
+          const spanLocs = document.createElement("span");
+          spanLocs.className = "arc-locations";
+          spanLocs.textContent = "Locations: " + mapping.locations.join(', ');
+          arcMetaDiv.appendChild(spanLocs);
+          arcContent.appendChild(arcMetaDiv);
+          li.appendChild(arcContent);
+
+          // Edit button
+          const editBtn = document.createElement("button");
+          editBtn.className = "btn tiny edit-btn";
+          editBtn.addEventListener("click", function () { editMapping(this); });
+          const editIcon = document.createElement("i");
+          editIcon.className = "material-icons";
+          editIcon.textContent = "edit";
+          editBtn.appendChild(editIcon);
+          li.appendChild(editBtn);
+
+          // Delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn tiny red delete-btn";
+          deleteBtn.addEventListener("click", function () { deleteMapping(this); });
+          const deleteIcon = document.createElement("i");
+          deleteIcon.className = "material-icons";
+          deleteIcon.textContent = "delete";
+          deleteBtn.appendChild(deleteIcon);
+          li.appendChild(deleteBtn);
+
+          arcList.appendChild(li);
+        });
+        cardContent.appendChild(arcList);
+
+        // "Add New Part" button.
+        const addPartBtn = document.createElement("button");
+        addPartBtn.className = "btn";
+        addPartBtn.addEventListener("click", function () { addNewPart(chapterTitle); });
+        const addIcon = document.createElement("i");
+        addIcon.className = "material-icons left";
+        addIcon.textContent = "add";
+        addPartBtn.appendChild(addIcon);
+        addPartBtn.appendChild(document.createTextNode(" Add New Part"));
+        cardContent.appendChild(addPartBtn);
+
+        card.appendChild(cardContent);
+
+        // Card action section.
+        const cardAction = document.createElement("div");
+        cardAction.className = "card-action";
+        const generatedLabel = document.createElement("span");
+        generatedLabel.className = "new-arc-label";
+        generatedLabel.textContent = "Generated";
+        cardAction.appendChild(generatedLabel);
+        card.appendChild(cardAction);
+
+        container.appendChild(card);
+        initSortable(listId);
+      }
+    }
+  });
+
+  // --- Inline Editing Functions ---
+  function editMapping(buttonEl) {
+    const li = buttonEl.closest('li[data-mapping-id]');
+    if (!li) {
+      alert("Mapping not found.");
+      return;
+    }
+    if (li.classList.contains('editing')) return;
+    li.classList.add('editing');
+
+    const currentText = li.dataset.partText;
+    const currentChars = li.dataset.characters;
+    const currentLocs = li.dataset.locations;
+
+    // Clear current li contents.
+    while (li.firstChild) { li.removeChild(li.firstChild); }
+
+    // Create input for arc text.
+    const inputText = document.createElement("input");
+    inputText.type = "text";
+    inputText.className = "inline-edit-input edit-text";
+    inputText.value = currentText;
+    inputText.placeholder = "Arc text";
+    li.appendChild(inputText);
+
+    // Create input for characters.
+    const inputChars = document.createElement("input");
+    inputChars.type = "text";
+    inputChars.className = "tagify-input edit-chars";
+    inputChars.value = currentChars;
+    inputChars.placeholder = "Characters";
+    li.appendChild(inputChars);
+
+    // Create input for locations.
+    const inputLocs = document.createElement("input");
+    inputLocs.type = "text";
+    inputLocs.className = "tagify-input edit-locs";
+    inputLocs.value = currentLocs;
+    inputLocs.placeholder = "Locations";
+    li.appendChild(inputLocs);
+
+    // Save button.
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn tiny save-btn";
+    saveBtn.addEventListener("click", function () { saveInlineMapping(this); });
+    const saveIcon = document.createElement("i");
+    saveIcon.className = "material-icons";
+    saveIcon.textContent = "save";
+    saveBtn.appendChild(saveIcon);
+    li.appendChild(saveBtn);
+
+    // Cancel button.
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn tiny cancel-btn";
+    cancelBtn.addEventListener("click", function () { cancelInlineMapping(this); });
+    const cancelIcon = document.createElement("i");
+    cancelIcon.className = "material-icons";
+    cancelIcon.textContent = "cancel";
+    cancelBtn.appendChild(cancelIcon);
+    li.appendChild(cancelBtn);
+
+    // Delete button.
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn tiny red delete-btn";
+    deleteBtn.addEventListener("click", function () { deleteMapping(this); });
+    const deleteIcon = document.createElement("i");
+    deleteIcon.className = "material-icons";
+    deleteIcon.textContent = "delete";
+    deleteBtn.appendChild(deleteIcon);
+    li.appendChild(deleteBtn);
+
+    // Initialize Tagify for characters and locations.
+    new Tagify(inputChars, {
+      whitelist: availableCharacters,
+      enforceWhitelist: true,
+      dropdown: { enabled: 1, maxItems: 10 }
+    });
+    new Tagify(inputLocs, {
+      whitelist: availableLocations,
+      enforceWhitelist: true,
+      dropdown: { enabled: 1, maxItems: 10 }
+    });
+  }
+
+  function cancelInlineMapping(buttonEl) {
+    const li = buttonEl.closest('li[data-mapping-id]');
+    if (!li) return;
+    const partText = li.dataset.partText;
+    const chars = li.dataset.characters;
+    const locs = li.dataset.locations;
+    while (li.firstChild) { li.removeChild(li.firstChild); }
+
+    // Rebuild arc content.
+    const arcContent = document.createElement("div");
+    arcContent.className = "arc-content";
+    const arcTextDiv = document.createElement("div");
+    arcTextDiv.className = "arc-text";
+    arcTextDiv.textContent = partText;
+    arcContent.appendChild(arcTextDiv);
+    const arcMetaDiv = document.createElement("div");
+    arcMetaDiv.className = "arc-meta";
+    const spanChars = document.createElement("span");
+    spanChars.className = "arc-characters";
+    spanChars.textContent = "Characters: " + chars;
+    arcMetaDiv.appendChild(spanChars);
+    arcMetaDiv.appendChild(document.createElement("br"));
+    const spanLocs = document.createElement("span");
+    spanLocs.className = "arc-locations";
+    spanLocs.textContent = "Locations: " + locs;
+    arcMetaDiv.appendChild(spanLocs);
+    arcContent.appendChild(arcMetaDiv);
+    li.appendChild(arcContent);
+
+    // Re-add edit button.
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn tiny edit-btn";
+    editBtn.addEventListener("click", function () { editMapping(this); });
+    const editIcon = document.createElement("i");
+    editIcon.className = "material-icons";
+    editIcon.textContent = "edit";
+    editBtn.appendChild(editIcon);
+    li.appendChild(editBtn);
+
+    // Re-add delete button.
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn tiny red delete-btn";
+    deleteBtn.addEventListener("click", function () { deleteMapping(this); });
+    const deleteIcon = document.createElement("i");
+    deleteIcon.className = "material-icons";
+    deleteIcon.textContent = "delete";
+    deleteBtn.appendChild(deleteIcon);
+    li.appendChild(deleteBtn);
+
+    li.classList.remove('editing');
+  }
+
+  function saveInlineMapping(buttonEl) {
+    const li = buttonEl.closest('li[data-mapping-id]');
+    if (!li) return;
+    const mappingId = li.dataset.mappingId;
+    const newText = li.querySelector('.edit-text').value.trim();
+    let selectedChars = [];
+    let selectedLocs = [];
+    try {
+      // Assuming Tagify stores the updated value in JSON format.
+      const tagifyChars = li.querySelector('.edit-chars').querySelectorAll('.tagify__tag');
+      selectedChars = Array.from(tagifyChars).map(el => el.innerText)
+    } catch (e) { console.error(e); }
+    try {
+      const tagifyLocs = li.querySelector('.edit-locs').querySelectorAll('.tagify__tag');
+      selectedLocs = Array.from(tagifyLocs).map(el => el.innerText)
+    } catch (e) { console.error(e); }
+
+    fetch(`/api/update_arc_combined/${mappingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: "{{ story.id }}",
+        part_text: newText,
+        characters: selectedChars,
+        locations: selectedLocs
+      })
+    }).then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          li.dataset.partText = newText;
+          li.dataset.characters = selectedChars.join(', ');
+          li.dataset.locations = selectedLocs.join(', ');
+          while (li.firstChild) { li.removeChild(li.firstChild); }
+
+          // Rebuild arc content.
+          const arcContent = document.createElement("div");
+          arcContent.className = "arc-content";
+          const arcTextDiv = document.createElement("div");
+          arcTextDiv.className = "arc-text";
+          arcTextDiv.textContent = newText;
+          arcContent.appendChild(arcTextDiv);
+          const arcMetaDiv = document.createElement("div");
+          arcMetaDiv.className = "arc-meta";
+          const spanChars = document.createElement("span");
+          spanChars.className = "arc-characters";
+          spanChars.textContent = "Characters: " + selectedChars.join(', ');
+          arcMetaDiv.appendChild(spanChars);
+          arcMetaDiv.appendChild(document.createElement("br"));
+          const spanLocs = document.createElement("span");
+          spanLocs.className = "arc-locations";
+          spanLocs.textContent = "Locations: " + selectedLocs.join(', ');
+          arcMetaDiv.appendChild(spanLocs);
+          arcContent.appendChild(arcMetaDiv);
+          li.appendChild(arcContent);
+
+          // Re-add edit and delete buttons.
+          const editBtn = document.createElement("button");
+          editBtn.className = "btn tiny edit-btn";
+          editBtn.addEventListener("click", function () { editMapping(this); });
+          const editIcon = document.createElement("i");
+          editIcon.className = "material-icons";
+          editIcon.textContent = "edit";
+          editBtn.appendChild(editIcon);
+          li.appendChild(editBtn);
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn tiny red delete-btn";
+          deleteBtn.addEventListener("click", function () { deleteMapping(this); });
+          const deleteIcon = document.createElement("i");
+          deleteIcon.className = "material-icons";
+          deleteIcon.textContent = "delete";
+          deleteBtn.appendChild(deleteIcon);
+          li.appendChild(deleteBtn);
+
+          li.classList.remove('editing');
+        }
+      });
+  }
+
+  function deleteMapping(buttonEl) {
+    const li = buttonEl.closest('li[data-mapping-id]');
+    if (!li) return;
+    const mappingId = li.dataset.mappingId;
+    if (confirm("Are you sure you want to delete this arc part?")) {
+      fetch(`/api/delete_detailed_arc_mapping/${mappingId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ story_id: "{{ story.id }}" })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.message) {
+            li.remove();
+          }
+        });
+    }
+  }
+
+  // --- New Part Functions ---
+  function addNewPart(chapterTitle) {
+    const listId = "arc-list-" + chapterTitle.replace(/\s/g, '-');
+    const ul = document.getElementById(listId);
+    if (!ul) return;
+    const li = document.createElement("li");
+    li.dataset.chapterTitle = chapterTitle;
+    li.dataset.partIndex = ul.children.length + 1;
+
+    // Input for new arc part.
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "inline-edit-input";
+    input.placeholder = "New arc part";
+    li.appendChild(input);
+
+    // Save button.
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn tiny save-btn";
+    saveBtn.addEventListener("click", function () { saveNewPart(this); });
+    const saveIcon = document.createElement("i");
+    saveIcon.className = "material-icons";
+    saveIcon.textContent = "save";
+    saveBtn.appendChild(saveIcon);
+    li.appendChild(saveBtn);
+
+    // Cancel button.
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn tiny cancel-btn";
+    cancelBtn.addEventListener("click", function () { cancelNewPart(this); });
+    const cancelIcon = document.createElement("i");
+    cancelIcon.className = "material-icons";
+    cancelIcon.textContent = "cancel";
+    cancelBtn.appendChild(cancelIcon);
+    li.appendChild(cancelBtn);
+
+    ul.appendChild(li);
+  }
+
+  function cancelNewPart(buttonEl) {
+    const li = buttonEl.closest('li');
+    if (li) li.remove();
+  }
+
+  function saveNewPart(buttonEl) {
+    const li = buttonEl.closest('li');
+    const newText = li.querySelector('.inline-edit-input').value.trim();
+    if (!newText) {
+      M.toast({ html: "Arc part text cannot be empty." });
+      return;
+    }
+    fetch('/api/save_new_arc_part', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: "{{ story.id }}",
+        chapter_title: li.dataset.chapterTitle,
+        part_text: newText
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message && data.new_mapping_id) {
+          li.dataset.mappingId = data.new_mapping_id;
+          li.dataset.partText = newText;
+          li.dataset.characters = "";
+          li.dataset.locations = "";
+          while (li.firstChild) { li.removeChild(li.firstChild); }
+
+          // Build arc content for the new part.
+          const arcContent = document.createElement("div");
+          arcContent.className = "arc-content";
+          const arcTextDiv = document.createElement("div");
+          arcTextDiv.className = "arc-text";
+          arcTextDiv.textContent = newText;
+          arcContent.appendChild(arcTextDiv);
+          const arcMetaDiv = document.createElement("div");
+          arcMetaDiv.className = "arc-meta";
+          const spanChars = document.createElement("span");
+          spanChars.className = "arc-characters";
+          spanChars.textContent = "Characters: ";
+          arcMetaDiv.appendChild(spanChars);
+          arcMetaDiv.appendChild(document.createElement("br"));
+          const spanLocs = document.createElement("span");
+          spanLocs.className = "arc-locations";
+          spanLocs.textContent = "Locations: ";
+          arcMetaDiv.appendChild(spanLocs);
+          arcContent.appendChild(arcMetaDiv);
+          li.appendChild(arcContent);
+
+          // Re-add edit button.
+          const editBtn = document.createElement("button");
+          editBtn.className = "btn tiny edit-btn";
+          editBtn.addEventListener("click", function () { editMapping(this); });
+          const editIcon = document.createElement("i");
+          editIcon.className = "material-icons";
+          editIcon.textContent = "edit";
+          editBtn.appendChild(editIcon);
+          li.appendChild(editBtn);
+
+          // Re-add delete button.
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn tiny red delete-btn";
+          deleteBtn.addEventListener("click", function () { deleteMapping(this); });
+          const deleteIcon = document.createElement("i");
+          deleteIcon.className = "material-icons";
+          deleteIcon.textContent = "delete";
+          deleteBtn.appendChild(deleteIcon);
+          li.appendChild(deleteBtn);
+        }
+      });
+  }
+
+  // --- Sortable Functions ---
+  function initSortable(listId) {
+    const el = document.getElementById(listId);
+    if (!el) return;
+    Sortable.create(el, {
+      animation: 150,
+      onEnd: function (evt) {
+        updateLocalIndices(el);
+        autoSaveArcOrder(el);
+      }
+    });
+  }
+  function updateLocalIndices(ul) {
+    Array.from(ul.children).forEach((li, index) => {
+      li.dataset.partIndex = index + 1;
+    });
+  }
+  function autoSaveArcOrder(ul) {
+    const chapterTitle = ul.dataset.chapterTitle;
+    if (!chapterTitle) return;
+    const newOrder = [];
+    Array.from(ul.children).forEach((li, index) => {
+      if (li.dataset.mappingId) {
+        newOrder.push({
+          mapping_id: li.dataset.mappingId,
+          new_index: index + 1
+        });
+      }
+    });
+    fetch('/api/update_arc_order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: "{{ story.id }}",
+        chapter_title: chapterTitle,
+        new_order: newOrder
+      })
+    });
+  }
+</script>
+{% endblock %}

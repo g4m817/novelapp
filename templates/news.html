@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h3>Latest News</h3>
+  {% for news in news_items %}
+  <div class="card">
+    <div class="card-content">
+      <span class="card-title">{{ news.title }}</span>
+      <p class="grey-text">{{ news.created_at.strftime('%Y-%m-%d') }}</p>
+      <!-- Output the markdown in a div with a data attribute -->
+      <div class="news-body" data-markdown="{{ news.body | e }}"></div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Pagination controls -->
+  {% if pagination.has_prev or pagination.has_next %}
+  <div class="center">
+    <ul class="pagination">
+      {% if pagination.has_prev %}
+      <li class="waves-effect"><a href="{{ url_for('news', page=pagination.prev_num) }}">« Prev</a></li>
+      {% else %}
+      <li class="disabled"><a href="#!">« Prev</a></li>
+      {% endif %}
+
+      {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if page_num %}
+      {% if page_num == pagination.page %}
+      <li class="active"><a href="#!">{{ page_num }}</a></li>
+      {% else %}
+      <li class="waves-effect"><a href="{{ url_for('news', page=page_num) }}">{{ page_num }}</a></li>
+      {% endif %}
+      {% else %}
+      <li class="disabled"><a href="#!">…</a></li>
+      {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+      <li class="waves-effect"><a href="{{ url_for('news', page=pagination.next_num) }}">Next »</a></li>
+      {% else %}
+      <li class="disabled"><a href="#!">Next »</a></li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+<!-- JavaScript to convert markdown to HTML using marked -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Select all elements with class "news-body"
+    const newsBodies = document.querySelectorAll('.news-body');
+    newsBodies.forEach(function (elem) {
+      // Retrieve the markdown text from the data attribute
+      const markdownText = elem.getAttribute('data-markdown');
+      // Use marked to convert markdown to HTML
+      elem.innerHTML = marked.parse(markdownText);
+    });
+  });
+</script>
+{% endblock %}

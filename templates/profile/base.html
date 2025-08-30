@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Mobile Sidenav Menu for Profile -->
+<ul class="sidenav" id="profile-mobile-menu">
+  <li class="{% if request.endpoint == 'profile.notifications' %}menu-active{% endif %}">
+    <a href="{{ url_for('profile_views.notifications') }}">
+      Notifications
+      {% if unread_notifications > 0 %}
+      <span class="badge">{{ unread_notifications }}</span>
+      {% endif %}
+    </a>
+  </li>
+  <li class="{% if request.endpoint == 'profile.details' %}menu-active{% endif %}">
+    <a href="{{ url_for('profile_views.details') }}">Details</a>
+  </li>
+  <li class="{% if request.endpoint == 'profile.subscriptions' %}menu-active{% endif %}">
+    <a href="{{ url_for('profile_views.subscriptions') }}">Subscriptions</a>
+  </li>
+  <li class="{% if request.endpoint == 'profile.history' %}menu-active{% endif %}">
+    <a href="{{ url_for('profile_views.history') }}">History</a>
+  </li>
+</ul>
+
+<!-- Hamburger trigger for small screens -->
+<div style="margin-top:15px;">
+  <a href="#" data-target="profile-mobile-menu" class="btn waves-effect waves-light sidenav-trigger hide-on-med-and-up">
+    Profile Menu
+  </a>
+</div>
+
+
+<div class="content-with-sidebar-container">
+  <!-- Fixed sidebar for larger screens -->
+  <div class="menu hide-on-small-only">
+    <ul>
+      <li class="{% if request.endpoint == 'profile.notifications' %}menu-active{% endif %}">
+        <a href="{{ url_for('profile_views.notifications') }}">
+          Notifications
+          {% if unread_notifications > 0 %}
+          <span class="badge">{{ unread_notifications }}</span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="{% if request.endpoint == 'profile.details' %}menu-active{% endif %}">
+        <a href="{{ url_for('profile_views.details') }}">Details</a>
+      </li>
+      <li class="{% if request.endpoint == 'profile.subscriptions' %}menu-active{% endif %}">
+        <a href="{{ url_for('profile_views.subscriptions') }}">Subscriptions</a>
+      </li>
+      <li class="{% if request.endpoint == 'profile.history' %}menu-active{% endif %}">
+        <a href="{{ url_for('profile_views.history') }}">History</a>
+      </li>
+    </ul>
+  </div>
+  <div class="content">
+    {% block profile_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

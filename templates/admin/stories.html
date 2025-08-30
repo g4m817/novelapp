@@ -1,0 +1,110 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Stories</h4>
+<table class="striped">
+  <thead>
+    <tr>
+      <th>Story Title</th>
+      <th>Author</th>
+      <th>Favorites</th>
+      <th>Shared</th>
+      <th>Spotlight</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for story in stories %}
+    <tr>
+      <td>
+        <a style="color: inherit; text-decoration: none;" href="{{ url_for('story_views.read_story', story_id=story.id) }}">{{
+          story.title }}</a>
+      </td>
+      <td>{{ story.author }}</td>
+      <td>{{ story.favorites_count }}</td>
+      <td>{{ "Yes" if story.shared else "No" }}</td>
+      <td>
+        <span class="spotlight" data-story-id="{{ story.id }}">
+          {{ "Yes" if story.spotlight else "No" }}
+        </span>
+      </td>
+      <td>{{ story.created_at.strftime("%Y-%m-%d") }}</td>
+      <td>
+        <button class="" onclick="deleteStory(event)" data-story-id="{{ story.id }}">Delete</button>
+        {% if story.shared %}
+        <button class="toggle-spotlight" onclick="toggleSpotlight(event)" data-story-id="{{ story.id }}">
+          Spotlight
+        </button>
+        {% else %}
+        <em>Not Public</em>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination Controls -->
+<div class="center">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('bp.stories_view', page=pagination.prev_num) }}">« Prev</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+    {% if page_num %}
+    {% if page_num == pagination.page %}
+    <li class="active"><a href="#!">{{ page_num }}</a></li>
+    {% else %}
+    <li class="waves-effect"><a href="{{ url_for('bp.stories_view', page=page_num) }}">{{ page_num }}</a></li>
+    {% endif %}
+    {% else %}
+    <li class="disabled"><a href="#!">…</a></li>
+    {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('bp.stories_view', page=pagination.next_num) }}">Next »</a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+
+<script>
+  function deleteStory(event) {
+    let check = confirm("Are you sure you want to delete?");
+    if (!check) return;
+    const storyId = event.target.dataset.storyId;
+    fetch(`/admin/delete_story/${storyId}`, {
+      method: "DELETE"
+    })
+      .finally(() => {
+        window.location.reload();
+      })
+  }
+  function toggleSpotlight(event) {
+    const storyId = event.target.dataset.storyId;
+    event.target.blur();
+    fetch("/admin/toggle_spotlight/" + storyId, {
+      method: "POST",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.spotlight !== undefined) {
+          // Update only the specific story's spotlight element.
+          const spotlightElem = document.querySelector(`.spotlight[data-story-id="${storyId}"]`);
+          if (spotlightElem) {
+            spotlightElem.innerText = data.spotlight ? 'Yes' : 'No';
+          }
+        }
+      });
+  }
+</script>
+{% endblock %}

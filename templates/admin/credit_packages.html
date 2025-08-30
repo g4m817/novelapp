@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Manage Credit Packages</h4>
+
+<!-- Form to create a new credit package -->
+<form id="create-credit-package-form" action="{{ url_for('admin.create_credit_package') }}" method="POST">
+  <div class="input-field">
+    <select name="credit_type" id="credit_type" required>
+      <option value="" disabled selected>Select Credit Type</option>
+      <option value="text">Text</option>
+      <option value="image">Image</option>
+      <option value="audio">Audio</option>
+    </select>
+    <label for="credit_type">Credit Type</label>
+  </div>
+  <div class="input-field">
+    <label for="credits">Credits</label>
+    <input type="number" name="credits" id="credits" value="1000" required />
+  </div>
+  <div class="input-field">
+    <label for="cost">Cost ($)</label>
+    <input type="text" name="cost" id="cost" value="0" required />
+  </div>
+  <button class="btn waves-effect waves-light purple" type="submit">Create Credit Package</button>
+</form>
+
+<!-- List existing credit packages -->
+<table class="striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Type</th>
+      <th>Credits</th>
+      <th>Cost ($)</th>
+      <th>Stripe Price ID</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for package in packages %}
+    <tr>
+      <td>{{ package.id }}</td>
+      <td>{{ package.credit_type }}</td>
+      <td>{{ package.credits }}</td>
+      <td>{{ package.cost }}</td>
+      <td>{{ package.stripe_price_id }}</td>
+      <td>
+        <form action="{{ url_for('admin.update_credit_package', package_id=package.id) }}" method="POST">
+          <div class="input-field">
+            <input type="text" name="credit_type" value="{{ package.credit_type }}" required style="width: 70px;" />
+          </div>
+          <div class="input-field">
+            <input type="number" name="credits" value="{{ package.credits }}" required style="width: 70px;" />
+          </div>
+          <div class="input-field">
+            <input type="text" name="cost" value="{{ package.cost }}" required style="width: 70px;" />
+          </div>
+          <button type="submit">Update</button>
+        </form>
+        <button class="btn red" data-package-id="{{ package.id }}" onclick="deletePackage(event)">Delete</button>
+
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var elems = document.querySelectorAll('select');
+    M.FormSelect.init(elems);
+  });
+  // Delete a package via API
+  function deletePackage(event) {
+    const packageId = event.target.dataset.packageId;
+    if (!confirm("Are you sure you want to delete this credit package?")) return;
+    fetch(`/admin/credit_packages/delete/${packageId}`, {
+      method: "DELETE"
+    })
+      .then(() => {
+        window.location.reload()
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+  }
+</script>
+{% endblock %}

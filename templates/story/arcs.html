@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* Main Card & Container Styles */
+  .card.main-card {
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    margin: 20px 0;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  h5,
+  h6 {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+
+  /* Toolbar styling for arcs generation */
+  .arc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .arc-toolbar .btn {
+    margin-right: 8px;
+  }
+
+  .btn.btn-credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  /* Container for displaying arcs */
+  #arc-container {
+    margin-top: 20px;
+    background-color: #222;
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  .arc-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    cursor: move;
+  }
+
+  .arc-item input {
+    flex-grow: 1;
+    background-color: #000;
+    color: #fff;
+    padding: 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+  }
+
+  .arc-item button.remove-arc {
+    margin-left: 8px;
+    background-color: #c62828;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .arc-item button.remove-arc:hover {
+    background-color: #b71c1c;
+  }
+
+  .btn.add-arc {
+    background-color: #2e7d32;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 15px;
+  }
+
+  .btn.add-arc:hover {
+    background-color: #1b5e20;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Story Arcs for "{{ story.title }}"</h4>
+  {% include "story/base.html" %}
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Story Arcs</h5>
+      <p class="section-info">
+        Generate and view story arcs based on your story's summaries and meta data.
+      </p>
+      <!-- Toolbar with Generate Action -->
+      <div class="arc-toolbar">
+        <button class="btn waves-effect waves-light" onclick="addArc()">Add New Arc</button>
+        <button class="btn btn-credit" id="gen-arcs" data-story-id="{{ story.id }}" onmouseenter="showArcsCost(event)"
+          onmouseleave="hideArcsCost(event)" onclick="generateArcs(event)">
+          <i class="material-icons left">autorenew</i> Generate Story Arcs
+          <span id="predicted-arcs-cost" style="margin-left: 6px;"></span>
+        </button>
+      </div>
+      <!-- Arc content container -->
+      <div id="arc-container">
+        {% if arcs and arcs|length > 0 %}
+        {% for arc in arcs %}
+        <div class="arc-item" data-arc-id="{{ arc.id }}" data-arc-order="{{ arc.arc_order }}">
+          <input type="text" value="{{ arc.arc_text }}" placeholder="Enter story arc">
+          <button class="remove-arc" onclick="removeArc(event)">Remove</button>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p id="no-arcs">No story arcs generated yet.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-action">
+      <button class="btn waves-effect waves-light" onclick="saveArcs()">Save Story Arcs</button>
+    </div>
+  </div>
+</div>
+
+<!-- Include SortableJS for drag and drop support -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  // Cost prediction functions remain unchanged.
+  function showArcsCost(event) {
+    const storyId = event.target.dataset.storyId;
+    if (storyId) {
+      fetch(`/api/predict_arcs_cost/${storyId}`)
+        .then(response => response.json())
+        .then(data => {
+          event.target.querySelector("#predicted-arcs-cost").innerText = data.total_predicted_credit_cost;
+        });
+    }
+  }
+  function hideArcsCost(event) {
+    event.target.querySelector("#predicted-arcs-cost").innerText = "";
+  }
+
+  function generateArcs(event) {
+    const storyId = event.target.dataset.storyId;
+    fetch("/api/generate_arcs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Clear the arc container using DOM methods.
+        const arcContainer = document.getElementById("arc-container");
+        while (arcContainer.firstChild) {
+          arcContainer.removeChild(arcContainer.firstChild);
+        }
+      })
+      .catch(err => console.error(err));
+  }
+
+  function addArc() {
+    const container = document.getElementById("arc-container");
+    const noArcs = document.getElementById("no-arcs");
+    if (noArcs) { noArcs.remove(); }
+
+    // Create a new div for the arc item.
+    const arcItem = document.createElement("div");
+    arcItem.classList.add("arc-item");
+
+    // Create the input element.
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Enter story arc";
+    input.value = "";
+
+    // Create the remove button.
+    const removeButton = document.createElement("button");
+    removeButton.classList.add("remove-arc");
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", removeArc);
+
+    // Append input and button to the arc item.
+    arcItem.appendChild(input);
+    arcItem.appendChild(removeButton);
+
+    // Append the arc item to the container.
+    container.appendChild(arcItem);
+  }
+
+  function removeArc(event) {
+    const arcItem = event.target.closest(".arc-item");
+    if (arcItem) {
+      arcItem.remove();
+      const container = document.getElementById("arc-container");
+      if (container.children.length === 0) {
+        const noArcsMessage = document.createElement("p");
+        noArcsMessage.id = "no-arcs";
+        noArcsMessage.textContent = "No story arcs generated yet.";
+        container.appendChild(noArcsMessage);
+      }
+    }
+  }
+
+  function saveArcs() {
+    const arcInputs = document.querySelectorAll("#arc-container .arc-item input");
+    const arcsArray = [];
+    arcInputs.forEach(input => {
+      if (input.value.trim() !== "") {
+        arcsArray.push(input.value.trim());
+      }
+    });
+    fetch("/api/save_arcs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: "{{ story.id }}", arcs: arcsArray }),
+    });
+  }
+
+  // Initialize SortableJS on the arc container.
+  document.addEventListener('DOMContentLoaded', function () {
+    const arcContainer = document.getElementById("arc-container");
+    if (arcContainer) {
+      Sortable.create(arcContainer, {
+        animation: 150,
+        onEnd: function (evt) {
+          updateArcOrder();
+        }
+      });
+    }
+  });
+
+  // Update arc order after a drag-and-drop action.
+  function updateArcOrder() {
+    const arcContainer = document.getElementById("arc-container");
+    let newOrder = [];
+    Array.from(arcContainer.children).forEach((item, index) => {
+      const arcId = item.getAttribute("data-arc-id");
+      if (arcId) {
+        newOrder.push({ arc_id: arcId, new_index: index + 1 });
+      }
+    });
+    fetch('/api/update_story_arc_order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: "{{ story.id }}",
+        new_order: newOrder
+      })
+    });
+  }
+
+  // Listen for arcs being generated via web sockets.
+  socket.on("arcs_generated", function (data) {
+    if (data.story_id != "{{ story.id }}") return;
+    const arcContainer = document.getElementById("arc-container");
+    if (!arcContainer) return;
+
+    // Clear the container using a DOM loop.
+    while (arcContainer.firstChild) {
+      arcContainer.removeChild(arcContainer.firstChild);
+    }
+
+    if (Array.isArray(data.arcs)) {
+      data.arcs.forEach(function (arc, index) {
+        // Create the arc container div.
+        const arcDiv = document.createElement("div");
+        arcDiv.classList.add("arc-item");
+        arcDiv.setAttribute("data-arc-order", index + 1);
+
+        // Create the input element.
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = arc;
+        input.placeholder = "Enter story arc";
+
+        // Create the remove button.
+        const removeButton = document.createElement("button");
+        removeButton.classList.add("remove-arc");
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", removeArc);
+
+        // Append input and button to the arc item.
+        arcDiv.appendChild(input);
+        arcDiv.appendChild(removeButton);
+        arcContainer.appendChild(arcDiv);
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Application Analytics</h4>
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">Token Usage & Revenue</span>
+    <form method="GET" action="{{ url_for('admin_views.analytics') }}">
+      <div class="input-field">
+        <input type="number" name="year" value="{{ year or '' }}" placeholder="Year">
+        <label for="year">Year (optional)</label>
+      </div>
+      <div class="input-field">
+        <input type="number" name="month" value="{{ month or '' }}" placeholder="Month (1-12)">
+        <label for="month">Month (optional)</label>
+      </div>
+      <button type="submit" class="btn">Filter</button>
+    </form>
+    <hr>
+    <h5>Overall Token Usage</h5>
+    <p>Total Input Tokens: {{ total_input }}</p>
+    <p>Total Output Tokens: {{ total_output }}</p>
+    <hr>
+    <h5>Token Cost Calculations</h5>
+    <p>Total Input Token Cost: ${{ "{:.4f}".format(total_input_cost) }}</p>
+    <p>Total Output Token Cost: ${{ "{:.4f}".format(total_output_cost) }}</p>
+    <p><strong>Total Token Spend: ${{ "{:.4f}".format(total_token_cost) }}</strong></p>
+    <hr>
+    <h5>GPT-4O-Mini Usage & Cost</h5>
+    <p>Input Tokens: {{ gpt_total_input }}</p>
+    <p>Output Tokens: {{ gpt_total_output }}</p>
+    <p>Input Cost: ${{ "{:.4f}".format(gpt_input_cost) }}</p>
+    <p>Output Cost: ${{ "{:.4f}".format(gpt_output_cost) }}</p>
+    <hr>
+    <h5>O1-Mini Usage & Cost</h5>
+    <p>Input Tokens: {{ o1_total_input }}</p>
+    <p>Output Tokens: {{ o1_total_output }}</p>
+    <p>Input Cost: ${{ "{:.4f}".format(o1_input_cost) }}</p>
+    <p>Output Cost: ${{ "{:.4f}".format(o1_output_cost) }}</p>
+    <hr>
+    <h5>Image Generation (Dall-E-3)</h5>
+    <p>Total Image Generation Cost: ${{ "{:.4f}".format(image_cost) }}</p>
+    <hr>
+    <h5>Revenue</h5>
+    <p><strong>Revenue: {{ "{:.2f}".format(total_revenue) }}$</strong></p>
+    <p><strong>Realized Revenue: {{ "{:.4f}".format(realized_revenue) }}$</strong></p>
+  </div>
+</div>
+{% endblock %}

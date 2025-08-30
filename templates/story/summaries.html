@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* Main Card & Global Container */
+  .card.main-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    background-color: #1e1e1e;
+    margin: 20px 0;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  h5 {
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+
+  .desc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .desc-toolbar .btn {
+    margin-right: 8px;
+  }
+
+  .btn.btn-credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  /* Description Card Styling */
+  .desc-row {
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background-color: #121212;
+    cursor: move;
+  }
+
+  .desc-row .card-content {
+    padding: 16px;
+  }
+
+  .desc-row .input-field input {
+    background-color: #000 !important;
+    color: #fff !important;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #555;
+    box-sizing: border-box;
+  }
+
+  .desc-row .input-field label {
+    color: #fff;
+  }
+
+  .desc-row .input-field input::placeholder {
+    color: #bbb;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Create Novel</h4>
+  {% include "story/base.html" %}
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Chapter Summaries</h5>
+      <p class="section-info">
+        Define your chapter summaries. You can add them manually or generate summaries automatically.
+      </p>
+
+      <!-- Toolbar with Generate and Add actions -->
+      <div class="desc-toolbar">
+        <button id="add-description" class="btn add-btn waves-effect waves-light" onclick="handleAddDescription()">
+          <i class="material-icons left">add</i> Add Chapter Description
+        </button>
+        <button id="gen-summaries" data-story-id="{{ story.id }}" class="btn btn-credit purple"
+          onmouseenter="showSummariesCost(event)" onmouseleave="hideSummariesCost(event)"
+          onclick="handleGenerateSummaries()">
+          <i class="material-icons left">autorenew</i>
+          Generate Summaries
+          <span id="predicted-summaries-cost" style="margin-left: 6px;"></span>
+        </button>
+      </div>
+
+      <!-- Descriptions Container -->
+      <div id="descriptions-container" style="margin-top:20px;">
+        {% if story.chapters and story.chapters|length > 0 %}
+        {% for chapter in story.chapters|sort(attribute='chapter_number') %}
+        <div class="card hoverable desc-row" data-chapter-id="{{ chapter.id }}">
+          <div class="card-content">
+            <div class="input-field">
+              <input name="desc_title_{{ chapter.id }}" type="text" class="validate desc-title"
+                placeholder="Chapter Title" value="{{ chapter.title }}" required>
+              <label>Chapter Title</label>
+            </div>
+            <div class="input-field">
+              <input name="desc_overview_{{ chapter.id }}" type="text" class="validate desc-overview"
+                placeholder="Chapter Overview" value="{{ chapter.summary or '' }}" required>
+              <label>Chapter Overview</label>
+            </div>
+          </div>
+          <div class="card-action">
+            <button class="remove-desc btn red" onclick="handleRemoveDesc(event)">
+              <i class="material-icons">delete</i> Remove
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No Chapter Summaries available.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-action">
+      <button id="save-summaries" class="btn waves-effect waves-light" onclick="saveSummaries()">Save Summaries</button>
+    </div>
+  </div>
+</div>
+
+<!-- Include SortableJS for drag and drop support -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  function showSummariesCost(event) {
+    const storyId = event.target.dataset.storyId;
+    if (storyId) {
+      fetch(`/api/predict_summaries_cost/${storyId}`)
+        .then(response => response.json())
+        .then(data => {
+          event.target.querySelector("#predicted-summaries-cost").innerText = data.total_predicted_credit_cost;
+        });
+    }
+  }
+
+  function hideSummariesCost(event) {
+    event.target.querySelector("#predicted-summaries-cost").innerText = "";
+  }
+
+  function handleGenerateSummaries() {
+    const storyId = getStoryId();
+    const container = document.getElementById("descriptions-container");
+    // Clear container using DOM removal
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    fetch("/api/generate_summaries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId })
+    });
+  }
+
+  function handleAddDescription() {
+    const container = document.getElementById("descriptions-container");
+    if (!container) return;
+    // Generate a new unique ID (if needed later)
+    const newId = generateUUID();
+    // Create the main card element
+    const card = document.createElement("div");
+    card.className = "card hoverable desc-row";
+    // New chapters won't have an ID until saved.
+    card.dataset.chapterId = "";
+
+    // Build card-content section
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+
+    // Create input-field for Chapter Title
+    const titleField = document.createElement("div");
+    titleField.className = "input-field";
+    const titleInput = document.createElement("input");
+    titleInput.name = "desc_title_new";
+    titleInput.type = "text";
+    titleInput.classList.add("validate", "desc-title");
+    titleInput.placeholder = "Chapter Title";
+    titleInput.required = true;
+    const titleLabel = document.createElement("label");
+    titleLabel.textContent = "Chapter Title";
+    titleField.appendChild(titleInput);
+    titleField.appendChild(titleLabel);
+
+    // Create input-field for Chapter Overview
+    const overviewField = document.createElement("div");
+    overviewField.className = "input-field";
+    const overviewInput = document.createElement("input");
+    overviewInput.name = "desc_overview_new";
+    overviewInput.type = "text";
+    overviewInput.classList.add("validate", "desc-overview");
+    overviewInput.placeholder = "Chapter Overview";
+    overviewInput.required = true;
+    const overviewLabel = document.createElement("label");
+    overviewLabel.textContent = "Chapter Overview";
+    overviewField.appendChild(overviewInput);
+    overviewField.appendChild(overviewLabel);
+
+    cardContent.appendChild(titleField);
+    cardContent.appendChild(overviewField);
+
+    // Build card-action section with remove button
+    const cardAction = document.createElement("div");
+    cardAction.className = "card-action";
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-desc btn red";
+    removeBtn.addEventListener("click", handleRemoveDesc);
+    const icon = document.createElement("i");
+    icon.className = "material-icons";
+    icon.textContent = "delete";
+    removeBtn.appendChild(icon);
+    removeBtn.insertAdjacentText("beforeend", " Remove");
+    cardAction.appendChild(removeBtn);
+
+    // Append both sections to the card
+    card.appendChild(cardContent);
+    card.appendChild(cardAction);
+
+    container.appendChild(card);
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function handleRemoveDesc(e) {
+    const row = e.target.closest(".desc-row");
+    if (row) {
+      row.remove();
+      // Optionally auto-save after removal.
+      saveSummaries();
+    }
+  }
+
+  function saveSummaries() {
+    const chapters = [];
+    document.querySelectorAll("#descriptions-container .desc-row").forEach(function (row) {
+      const chapterId = row.dataset.chapterId || null;
+      const titleElem = row.querySelector(".desc-title");
+      const overviewElem = row.querySelector(".desc-overview");
+      if (titleElem && titleElem.value) {
+        chapters.push({
+          id: chapterId,
+          title: titleElem.value,
+          summary: overviewElem ? overviewElem.value : ""
+        });
+      }
+    });
+    fetch("/api/update_chapter_summaries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        story_id: getStoryId(),
+        chapters: chapters
+      })
+    });
+  }
+
+  function getStoryId() {
+    return "{{ story.id }}";
+  }
+
+  function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  // Initialize SortableJS on the descriptions container for chapter reordering.
+  document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById("descriptions-container");
+    if (container) {
+      Sortable.create(container, {
+        animation: 150,
+        onEnd: function (evt) {
+          updateChapterOrder();
+        }
+      });
+    }
+  });
+
+  // When the user reorders chapters, gather the new order and post to the backend.
+  function updateChapterOrder() {
+    const container = document.getElementById("descriptions-container");
+    let newOrder = [];
+    Array.from(container.children).forEach((row, index) => {
+      const chapterId = row.getAttribute("data-chapter-id");
+      if (chapterId) {
+        newOrder.push({ chapter_id: chapterId, new_index: index + 1 });
+      }
+    });
+    fetch('/api/update_chapter_order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story_id: getStoryId(),
+        new_order: newOrder
+      })
+    });
+  }
+
+  socket.on("summaries_generated", function (data) {
+    if (data.story_id != getStoryId()) return;
+    const container = document.getElementById("descriptions-container");
+    if (!container) return;
+    // Clear container using DOM removal.
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    data.summaries.forEach(function (chapter) {
+      // Create main card element.
+      const card = document.createElement("div");
+      card.className = "card hoverable desc-row";
+      card.dataset.chapterId = chapter.id || "";
+
+      // Build card-content section.
+      const cardContent = document.createElement("div");
+      cardContent.className = "card-content";
+
+      // Input-field for Chapter Title.
+      const titleField = document.createElement("div");
+      titleField.className = "input-field";
+      const titleInput = document.createElement("input");
+      titleInput.name = `desc_title_${chapter.id}`;
+      titleInput.type = "text";
+      titleInput.classList.add("validate", "desc-title");
+      titleInput.placeholder = "Chapter Title";
+      titleInput.required = true;
+      titleInput.value = chapter.title;
+      const titleLabel = document.createElement("label");
+      titleLabel.textContent = "Chapter Title";
+      titleField.appendChild(titleInput);
+      titleField.appendChild(titleLabel);
+
+      // Input-field for Chapter Overview.
+      const overviewField = document.createElement("div");
+      overviewField.className = "input-field";
+      const overviewInput = document.createElement("input");
+      overviewInput.name = `desc_overview_${chapter.id}`;
+      overviewInput.type = "text";
+      overviewInput.classList.add("validate", "desc-overview");
+      overviewInput.placeholder = "Chapter Overview";
+      overviewInput.required = true;
+      overviewInput.value = chapter.summary || "";
+      const overviewLabel = document.createElement("label");
+      overviewLabel.textContent = "Chapter Overview";
+      overviewField.appendChild(overviewInput);
+      overviewField.appendChild(overviewLabel);
+
+      cardContent.appendChild(titleField);
+      cardContent.appendChild(overviewField);
+
+      // Build card-action section with remove button.
+      const cardAction = document.createElement("div");
+      cardAction.className = "card-action";
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "remove-desc btn red";
+      removeBtn.addEventListener("click", handleRemoveDesc);
+      const icon = document.createElement("i");
+      icon.className = "material-icons";
+      icon.textContent = "delete";
+      removeBtn.appendChild(icon);
+      removeBtn.insertAdjacentText("beforeend", " Remove");
+      cardAction.appendChild(removeBtn);
+
+      card.appendChild(cardContent);
+      card.appendChild(cardAction);
+      container.appendChild(card);
+    });
+  });
+</script>
+{% endblock %}

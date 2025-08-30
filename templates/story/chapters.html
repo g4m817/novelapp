@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .main-card {
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    margin-bottom: 20px;
+  }
+
+  .card-content {
+    padding: 20px;
+    color: #fff;
+  }
+
+  .card-action {
+    background-color: #121212;
+    padding: 10px 20px;
+    text-align: right;
+  }
+
+  /* Generate Button (Unified Style) */
+  .btn.btn-credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Chapter Card Styling */
+  .chapter-card {
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background-color: #121212;
+  }
+
+  .chapter-card .card-content .card-title {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+  }
+
+  /* Textarea Styling */
+  .chapter-content {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: #000;
+    color: #fff;
+  }
+
+  /* Action Buttons in Chapter Card */
+  .card-action .btn-small {
+    margin-left: 10px;
+  }
+
+  .section-info {
+    margin-bottom: 20px;
+    color: #aaa;
+  }
+</style>
+
+<div class="container">
+  <h4 class="page-header">Create Novel</h4>
+  {% include "story/base.html" %}
+  <div class="card main-card">
+    <div class="card-content">
+      <h5>Chapters</h5>
+      <p class="section-info">
+        Generate your full nove, ensure you have completed all previous tabs before generating!
+      </p>
+      <button id="gen-all-chapters" class="right btn btn-credit purple" data-story-id="{{ story.id }}"
+        onmouseenter="showAllChaptersCost(event)" onmouseleave="hideAllChaptersCost(event)"
+        onclick="generateAllChapters(event)">
+        <i class="material-icons left">autorenew</i>
+        <span id="predicted-all-chapters-cost" style="margin-right: 10px;"></span>
+        Generate All Chapters
+      </button>
+      <div style="clear:both;"></div>
+      <div id="chapters-container" style="margin-top:20px;">
+        {% if chapters and chapters|length > 0 %}
+        {% for chapter in chapters %}
+        <div class="card chapter-card" data-chapter-number="{{ chapter.chapter_number }}">
+          <div class="card-content">
+            <span class="card-title">Chapter {{ chapter.chapter_number }}: {{ chapter.title }}</span>
+            <textarea id="chapter-content-{{ chapter.chapter_number }}" class="chapter-content"
+              data-chapter-number="{{ chapter.chapter_number }}"
+              style="min-height:150px;">{{ chapter.content }}</textarea>
+          </div>
+          <div class="card-action">
+            <button class="left gen-chapter btn-small btn btn-credit purple"
+              data-chapter-number="{{ chapter.chapter_number }}" data-story-id="{{ story.id }}"
+              onmouseenter="showChapterCost(event)" onmouseleave="hideChapterCost(event)"
+              onclick="regenerateChapter(event)">
+              <i class="material-icons left">autorenew</i>
+              <span class="predicted-chapter-cost" style="margin-right: 10px;"></span>
+              Regenerate Chapter
+            </button>
+            <button class="btn waves-effect waves-light" data-chapter-number="{{ chapter.chapter_number }}"
+              data-story-id="{{ story.id }}" onclick="saveChapter(event)">
+              Save Chapter
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No chapters generated yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function showAllChaptersCost(event) {
+    const storyId = event.target.dataset.storyId;
+    if (storyId) {
+      fetch(`/api/predict_all_chapters_cost/${storyId}`)
+        .then(response => response.json())
+        .then(data => {
+          event.target.querySelector("#predicted-all-chapters-cost").innerText =
+            data.total_predicted_credit_cost;
+        });
+    }
+  }
+
+  function hideAllChaptersCost(event) {
+    event.target.querySelector("#predicted-all-chapters-cost").innerText = "";
+  }
+
+  function showChapterCost(event) {
+    const button = event.target.closest(".gen-chapter");
+    const storyId = button.dataset.storyId;
+    const chapterNumber = button.dataset.chapterNumber;
+    if (storyId && chapterNumber) {
+      fetch(`/api/predict_chapter_cost/${storyId}/${chapterNumber}`)
+        .then(response => response.json())
+        .then(data => {
+          button.querySelector(".predicted-chapter-cost").innerText =
+            data.total_predicted_credit_cost;
+        });
+    }
+  }
+
+  function hideChapterCost(event) {
+    const button = event.target.closest(".gen-chapter");
+    if (button) {
+      button.querySelector(".predicted-chapter-cost").innerText = "";
+    }
+  }
+
+  // Initialize editors on existing chapter textareas.
+  function setupEditors() {
+    const chapterTextareas = document.querySelectorAll(".chapter-content");
+    chapterTextareas.forEach(function (textarea) {
+      new SimpleMDE({
+        element: textarea,
+        autoDownloadFontAwesome: false,
+        renderingConfig: { singleLineBreaks: false },
+      });
+    });
+  }
+  // Delay editor setup for dynamically loaded content.
+  setTimeout(setupEditors, 500);
+
+  function generateAllChapters(event) {
+    const container = document.getElementById("chapters-container");
+    if (container) {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+    }
+    const storyId = event.target.dataset.storyId;
+    fetch("/api/generate_all_chapters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId }),
+    });
+  }
+
+  function regenerateChapter(event) {
+    const storyId = event.target.dataset.storyId;
+    const chapterNumber = event.target.dataset.chapterNumber;
+    fetch("/api/generate_all_chapters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId, chapter_number: chapterNumber }),
+    });
+  }
+
+  function saveChapter(event) {
+    const storyId = event.target.dataset.storyId;
+    const chapterNumber = event.target.dataset.chapterNumber;
+    const card = document.querySelector('.chapter-card[data-chapter-number="' + chapterNumber + '"]');
+    let content = "";
+    if (card) {
+      const codeMirrorElem = card.querySelector('.CodeMirror');
+      if (codeMirrorElem) {
+        content = codeMirrorElem.innerText;
+      } else {
+        const textarea = card.querySelector("textarea.chapter-content");
+        content = textarea ? textarea.value : "";
+      }
+    }
+    fetch("/api/save_chapter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ story_id: storyId, chapter_number: chapterNumber, content: content }),
+    });
+  }
+
+  function getStoryId() {
+    return "{{ story.id }}";
+  }
+
+  // Socket event for chapter generation.
+  socket.on("chapter_generated", function (data) {
+    if (data.story_id != getStoryId()) return;
+    const chapterNumber = data.chapter_number;
+    const container = document.getElementById("chapters-container");
+    if (!container) return;
+
+    let existingCard = container.querySelector('.chapter-card[data-chapter-number="' + chapterNumber + '"]');
+    if (existingCard) {
+      // Update existing chapter card.
+      const textarea = existingCard.querySelector("textarea.chapter-content");
+      if (textarea) {
+        textarea.value = data.content;
+        if (textarea.simplemde) {
+          textarea.simplemde.value(data.content);
+        }
+      }
+      const titleElem = existingCard.querySelector(".card-title");
+      if (titleElem) {
+        titleElem.textContent = "Chapter " + chapterNumber + ": " + data.title;
+      }
+    } else {
+      // Build a new chapter card.
+      const newCard = document.createElement("div");
+      newCard.className = "card chapter-card";
+      newCard.setAttribute("data-chapter-number", chapterNumber);
+
+      // Card Content
+      const cardContent = document.createElement("div");
+      cardContent.className = "card-content";
+
+      // Chapter Title
+      const cardTitle = document.createElement("span");
+      cardTitle.className = "card-title";
+      cardTitle.textContent = "Chapter " + chapterNumber + ": " + data.title;
+      cardContent.appendChild(cardTitle);
+
+      // Textarea for chapter content.
+      const textarea = document.createElement("textarea");
+      textarea.id = "chapter-content-" + chapterNumber;
+      textarea.className = "chapter-content";
+      textarea.setAttribute("data-chapter-number", chapterNumber);
+      textarea.style.minHeight = "150px";
+      textarea.style.backgroundColor = "#000";
+      textarea.style.color = "#fff";
+      textarea.value = data.content;
+      cardContent.appendChild(textarea);
+
+      newCard.appendChild(cardContent);
+
+      // Card Action
+      const cardAction = document.createElement("div");
+      cardAction.className = "card-action";
+
+      // Regenerate Chapter Button
+      const regenBtn = document.createElement("button");
+      regenBtn.className = "gen-chapter btn-small btn btn-credit purple";
+      regenBtn.setAttribute("data-chapter-number", chapterNumber);
+      regenBtn.setAttribute("data-story-id", data.story_id);
+      regenBtn.addEventListener("mouseenter", showChapterCost);
+      regenBtn.addEventListener("mouseleave", hideChapterCost);
+      regenBtn.addEventListener("click", regenerateChapter);
+
+      const regenIcon = document.createElement("i");
+      regenIcon.className = "material-icons left";
+      regenIcon.textContent = "monetization_on";
+      regenBtn.appendChild(regenIcon);
+
+      const costSpan = document.createElement("span");
+      costSpan.className = "predicted-chapter-cost";
+      costSpan.style.marginRight = "10px";
+      regenBtn.appendChild(costSpan);
+
+      regenBtn.appendChild(document.createTextNode("Regenerate Chapter"));
+      cardAction.appendChild(regenBtn);
+
+      // Save Chapter Button
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "save-chapter btn-small btn btn-credit purple";
+      saveBtn.setAttribute("data-chapter-number", chapterNumber);
+      saveBtn.setAttribute("data-story-id", data.story_id);
+      saveBtn.textContent = "Save Chapter";
+      saveBtn.addEventListener("click", saveChapter);
+      cardAction.appendChild(saveBtn);
+
+      newCard.appendChild(cardAction);
+      container.appendChild(newCard);
+
+      // Initialize SimpleMDE on the new textarea.
+      const simplemdeInstance = new SimpleMDE({
+        element: textarea,
+        autoDownloadFontAwesome: false,
+        renderingConfig: { singleLineBreaks: false },
+      });
+      textarea.simplemde = simplemdeInstance;
+    }
+
+    // Sort chapter cards by chapter number.
+    const cardsArray = Array.from(container.querySelectorAll(".chapter-card"));
+    cardsArray.sort(function (a, b) {
+      const aNum = parseInt(a.getAttribute("data-chapter-number"));
+      const bNum = parseInt(b.getAttribute("data-chapter-number"));
+      return aNum - bNum;
+    });
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+    cardsArray.forEach(function (card) {
+      container.appendChild(card);
+    });
+  });
+</script>
+{% endblock %}

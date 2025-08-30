@@ -1,0 +1,31 @@
+<ul class="wizard-steps">
+        {% if story %}
+        <li data-step="1" class="{% if request.endpoint == 'story_views.overview' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.overview', story_id=story.id) }}">Novel Details</a></li>
+        <li data-step="3" class="{% if request.endpoint == 'story_views.meta' %}active{% endif %}""><a href=" {{
+                url_for('story_views.meta', story_id=story.id) }}">Meta</a></li>
+        <li data-step="2" class="{% if request.endpoint == 'story_views.arcs' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.arcs', story_id=story.id) }}">Arcs</a></li>
+        <li data-step="4" class="{% if request.endpoint == 'story_views.summaries' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.summaries', story_id=story.id) }}">Summaries</a></li>
+        <li data-step="4" class="{% if request.endpoint == 'story_views.chapter_guide' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.chapter_guide', story_id=story.id) }}">Chapter Guides</a></li>
+        <li data-step="5" class="{% if request.endpoint == 'story_views.images' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.images', story_id=story.id) }}">Images</a></li>
+        <li data-step="5" class="{% if request.endpoint == 'story_views.chapters' %}active{% endif %}"><a
+                        href="{{ url_for('story_views.chapters', story_id=story.id) }}">Full Novel</a></li>
+        <li><a href="" onclick="deleteStoryPage(event)" data-story-id="{{ story.id }}">Delete Story</a></li>
+        {% endif %}
+</ul>
+<script>
+        function deleteStoryPage(event) {
+                event.preventDefault();
+                const storyId = event.target.dataset.storyId;
+                let check = confirm("Are you sure you want to delete?");
+                if (!check) return;
+                fetch("/api/delete_story/" + storyId, { method: "DELETE" })
+                .finally(()=>{
+                        window.location = '/dashboard'
+                })
+        }
+</script>

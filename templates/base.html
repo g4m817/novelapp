@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>example.com</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+
+<body>
+  <nav class="main-nav">
+    <div class="nav-wrapper container">
+      <a href="{{ url_for('index') }}" class="brand-logo">example.com</a>
+      <!-- Hamburger Trigger for mobile -->
+      <a href="#" data-target="mobile-nav" class="sidenav-trigger">
+        <i class="material-icons">menu</i>
+      </a>
+      <!-- Regular menu: hide on medium and down -->
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+        {% if user %}
+        <li>
+          {% if user.text_credits > 0 %} 
+            <span class="credit-item">
+              <i class="material-icons text-credits" title="Text Credits">short_text</i> 
+              <span class="text-credit-value">{{ user.text_credits }}</span>
+            </span>
+          {% endif %}
+          {% if user.image_credits > 0 %} 
+            <span class="credit-item">
+              <i class="material-icons image-credits" title="Image Credits">image</i>
+              <span class="image-credit-value">{{ user.image_credits }}</span>
+            </span>
+          {% endif %}
+          {% if user.audio_credits > 0 %} 
+            <span class="credit-item">
+              <i class="material-icons audio-credits" title="Audio Credits">audiotrack</i>
+              <span class="audio-credit-value">{{ user.audio_credits }}</span>
+            </span>
+          {% endif %}
+        </li>
+        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('news') }}">News</a></li>
+        <li><a href="{{ url_for('explore') }}">Explore</a></li>
+        <li>
+          <a href="{{ url_for('profile_views.subscriptions') }}">
+            Profile
+            {% if unread_notifications > 0 %}
+            <span class="badge">{{ unread_notifications }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
+        {% if user.role.name.lower() == 'admin' %}
+        <li><a href="{{ url_for('admin_views.dashboard') }}">Admin</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+        {% else %}
+        <li><a href="{{ url_for('auth_views.login') }}">Login</a></li>
+        <li><a href="{{ url_for('auth_views.register') }}">Register</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Mobile Sidenav Menu -->
+  <ul class="sidenav" id="mobile-nav">
+    {% if user %}
+    <li>
+      {% if user.text_credits > 0 %} 
+        <span class="credit-item">
+          <i class="material-icons text-credits" title="Text Credits">short_text</i> 
+          <span class="text-credit-value">{{ user.text_credits }}</span>
+        </span>
+      {% endif %}
+      {% if user.image_credits > 0 %} 
+        <span class="credit-item">
+          <i class="material-icons image-credits" title="Image Credits">image</i>
+          <span class="image-credit-value">{{ user.image_credits }}</span>
+        </span>
+      {% endif %}
+      {% if user.audio_credits > 0 %} 
+        <span class="credit-item">
+          <i class="material-icons audio-credits" title="Audio Credits">audiotrack</i>
+          <span class="audio-credit-value">{{ user.audio_credits }}</span>
+        </span>
+      {% endif %}
+    </li>
+    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+    <li><a href="{{ url_for('news') }}">News</a></li>
+    <li><a href="{{ url_for('explore') }}">Explore</a></li>
+    <li>
+      <a href="{{ url_for('profile_views.subscriptions') }}">
+        Profile
+        {% if unread_notifications > 0 %}
+        <span class="badge">{{ unread_notifications }}</span>
+        {% endif %}
+      </a>
+    </li>
+    <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
+    {% if user.role.name.lower() == 'admin' %}
+    <li><a href="{{ url_for('admin_views.dashboard') }}">Admin</a></li>
+    {% endif %}
+    <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+    {% else %}
+    <li><a href="{{ url_for('auth_views.login') }}">Login</a></li>
+    <li><a href="{{ url_for('auth_views.register') }}">Register</a></li>
+    {% endif %}
+  </ul>
+  <main class="container">
+    <div class="message-container">
+      {% if messages %}
+      {% for message in messages %}
+      <div onclick="this.remove()" class="notification card-panel teal dark-4">{{ message }}</div>
+      {% endfor %}
+      {% endif %}
+    </div>
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <footer class="page-footer center" style="background:#000;">
+    <div class="container">
+      <div class="row">
+        <div class="s12">
+          <div class="footer-links">
+            <a href="{{ url_for('cookie_policy') }}">Cookie Policy</a> | 
+            <a href="{{ url_for('acceptable_use') }}">Acceptable Use</a> | 
+            <a href="{{ url_for('copyright') }}">Copyright</a> | 
+            <a href="{{ url_for('dmca') }}">DMCA</a> | 
+            <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a> | 
+            <a href="{{ url_for('refund_policy') }}">Refund Policy</a> | 
+            <a href="{{ url_for('terms_of_use') }}">Terms of Use</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      <div class="container">
+        © {{ current_year if current_year else "2025" }} example.com. All rights reserved.
+      </div>
+    </div>
+  </footer>
+  <div id="spinner" class="preloader-wrapper small active" style="display: none; position: fixed; top: 50%; left: 50%">
+    <div class="spinner-layer spinner-purple-only">
+      <div class="circle-clipper left">
+        <div class="circle"></div>
+      </div>
+      <div class="gap-patch">
+        <div class="circle"></div>
+      </div>
+      <div class="circle-clipper right">
+        <div class="circle"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+
+</html>

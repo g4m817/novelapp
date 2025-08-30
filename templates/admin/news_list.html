@@ -1,0 +1,129 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<h4>Manage News</h4>
+
+<!-- News Form: Used for both create and edit -->
+<div id="news-form-container">
+  <h5 id="form-title">Create News Article</h5>
+  <form id="news-form" method="POST" action="{{ url_for('admin.create_news') }}">
+    <!-- Hidden field to hold news ID for edits -->
+    <input type="hidden" name="news_id" id="news-id" value="">
+    <div class="input-field">
+      <input type="text" name="title" id="news-title" value="" required>
+      <label for="news-title">Title</label>
+    </div>
+    <div class="input-field">
+      <textarea name="body" id="news-body" class="materialize-textarea" style="height:300px;" required></textarea>
+      <label for="news-body">Body</label>
+    </div>
+    <button type="submit" class="btn" id="form-submit-btn">Create</button>
+    <button type="button" class="btn grey" id="form-cancel-btn" style="display:none;">Cancel</button>
+  </form>
+</div>
+
+<hr>
+
+<!-- List of News Articles -->
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Created At</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for news in news_items %}
+    <tr>
+      <td>{{ news.title }}</td>
+      <td>{{ news.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>
+        <!-- Edit button -->
+        <button class="btn-small edit-btn" data-news-id="{{ news.id }}" data-news-title="{{ news.title }}"
+          data-news-body="{{ news.body }}">Edit</button>
+        <!-- Delete form -->
+        <form action="{{ url_for('admin.delete_news', news_id=news.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn-small red"
+            onclick="return confirm('Are you sure you want to delete this article?');">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Pagination Controls -->
+<ul class="pagination">
+  {% if pagination.has_prev %}
+  <li class="waves-effect"><a href="{{ url_for('admin_views.news_list', page=pagination.prev_num) }}">« Prev</a></li>
+  {% else %}
+  <li class="disabled"><a href="#!">« Prev</a></li>
+  {% endif %}
+
+  {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+  {% if page_num %}
+  {% if page_num == pagination.page %}
+  <li class="active"><a href="#!">{{ page_num }}</a></li>
+  {% else %}
+  <li class="waves-effect"><a href="{{ url_for('admin_views.news_list', page=page_num) }}">{{ page_num }}</a></li>
+  {% endif %}
+  {% else %}
+  <li class="disabled"><a href="#!">…</a></li>
+  {% endif %}
+  {% endfor %}
+
+  {% if pagination.has_next %}
+  <li class="waves-effect"><a href="{{ url_for('admin_views.news_list', page=pagination.next_num) }}">Next »</a></li>
+  {% else %}
+  <li class="disabled"><a href="#!">Next »</a></li>
+  {% endif %}
+</ul>
+
+<!-- JavaScript to handle Edit functionality -->
+<script>
+  // When an edit button is clicked, populate the form with the news data and switch the form action.
+  const editButtons = document.querySelectorAll('.edit-btn');
+  const newsForm = document.getElementById('news-form');
+  const formTitle = document.getElementById('form-title');
+  const formSubmitBtn = document.getElementById('form-submit-btn');
+  const cancelBtn = document.getElementById('form-cancel-btn');
+  const newsIdInput = document.getElementById('news-id');
+  const newsTitleInput = document.getElementById('news-title');
+  const newsBodyInput = document.getElementById('news-body');
+
+  editButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const newsId = button.getAttribute('data-news-id');
+      const title = button.getAttribute('data-news-title');
+      const body = button.getAttribute('data-news-body');
+
+      // Change the form to edit mode:
+      formTitle.textContent = "Edit News Article";
+      formSubmitBtn.textContent = "Update";
+      // Set hidden news id field:
+      newsIdInput.value = newsId;
+      // Populate fields:
+      newsTitleInput.value = title;
+      newsBodyInput.value = body;
+      // Make sure labels are active:
+      M.updateTextFields();
+      // Change form action to the edit endpoint:
+      newsForm.action = `/admin/news/edit/${newsId}`;
+      // Show cancel button:
+      cancelBtn.style.display = "inline-block";
+    });
+  });
+
+  // Cancel edit and reset form to create mode.
+  cancelBtn.addEventListener('click', () => {
+    newsForm.action = "{{ url_for('admin.create_news') }}";
+    formTitle.textContent = "Create News Article";
+    formSubmitBtn.textContent = "Create";
+    newsIdInput.value = "";
+    newsTitleInput.value = "";
+    newsBodyInput.value = "";
+    M.updateTextFields();
+    cancelBtn.style.display = "none";
+  });
+</script>
+{% endblock %}

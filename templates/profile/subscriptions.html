@@ -1,0 +1,154 @@
+{% extends "profile/base.html" %}
+{% block profile_content %}
+<h4>Your Credits</h4>
+<div class="row">
+  <h5>Your Credits</h5>
+  <ul class="collection black dark-4">
+    {% if user.text_credits > 0 %}
+    <li class="black collection-item">
+      Text Credits: <strong>{{ user.text_credits }}</strong>
+    </li>
+    {% endif %}
+    {% if user.image_credits > 0 %}
+    <li class="black collection-item">
+      Image Credits: <strong>{{ user.image_credits }}</strong>
+    </li>
+    {% endif %}
+    {% if user.audio_credits > 0 %}
+    <li class="black collection-item">
+      Audio Credits: <strong>{{ user.audio_credits }}</strong>
+    </li>
+    {% endif %}
+  </ul>
+</div>
+
+<h4>Buy Credits</h4>
+<div class="row">
+  {% if user.role.name == 'admin' %}
+  <p>Admins cannot purchase credits.</p>
+  {% else %}
+  {% for package in credit_packages %}
+  <div class="col s12 m4 l3">
+    <div class="card blue dark-5">
+      <div class="card-content">
+        <span class="card-title">{{ package.credits }} {{ package.credit_type|capitalize }} Credits</span>
+        <p><strong>Cost:</strong> ${{ package.cost }}</p>
+        <button class="btn one-time-purchase" data-package-id="{{ package.id }}">
+          Buy Now
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+<h4>Subscriptions</h4>
+<div class="row">
+  {% if user.role.name == 'admin' %}
+  <p>Admins cannot change their subscription</p>
+  {% else %}
+  {% for role in roles %}
+  {% if role.name != 'admin' %}
+  <div class="col s12 m6 l4">
+    <div class="card {% if user.role.name == role.name %}green dark-4{% else %}blue dark-5{% endif %}">
+      <div class="card-content">
+        <span class="card-title">{{ role.name|capitalize }} Subscription</span>
+        {% if role.default_text_credits %}<p><strong>Text Credits:</strong> {{ role.default_text_credits }}</p>{% endif
+        %}
+        {% if role.default_image_credits %}<p><strong>Image Credits:</strong> {{ role.default_image_credits }}</p>{%
+        endif %}
+        {% if role.default_audio_credits %}<p><strong>Audio Credits:</strong> {{ role.default_audio_credits }}</p>{%
+        endif %}
+        <p><strong>Cost:</strong> ${{ role.cost }}</p>
+        {% if user.role.name == role.name %}
+        <p class="green-text text-darken-2"><strong>Currently Subscribed</strong></p>
+        {% else %}
+        {% if role.name != 'user' %}
+        <!-- Button to trigger Stripe Checkout -->
+        <button class="btn subscribe-button" data-role-id="{{ role.id }}">
+          Subscribe
+        </button>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+</div>
+
+<!-- New Manage Subscription Button -->
+{% if user.stripe_customer_id %}
+<div class="row">
+  <div class="col s12">
+    <form action="{{ url_for('profile.create_portal_session') }}" method="POST">
+      <button type="submit" class="btn purple">Manage Subscription</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Include Stripe.js and the existing checkout session JS -->
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  // Replace with your test publishable key from Stripe Dashboard
+  var stripePublishableKey = "{{ stripe_key }}"
+  var stripe = Stripe(stripePublishableKey)
+
+  document.querySelectorAll('.one-time-purchase').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var packageId = button.getAttribute('data-package-id');
+      fetch(`/create-one-time-checkout-session/${packageId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (session) {
+          if (session.error) {
+            alert(session.error);
+          } else {
+            return stripe.redirectToCheckout({ sessionId: session.id });
+          }
+        })
+        .catch(function (error) {
+          console.error('Error:', error);
+        });
+    });
+  });
+
+  // Attach event listener to each subscription button
+  document.querySelectorAll('.subscribe-button').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var roleId = button.getAttribute('data-role-id');
+      fetch(`/create-checkout-session/${roleId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (session) {
+          // Redirect to Stripe Checkout
+          return stripe.redirectToCheckout({ sessionId: session.id });
+        })
+        .then(function (result) {
+          if (result.error) {
+            // Display error message to your customer
+            alert(result.error.message);
+          }
+        })
+        .catch(function (error) {
+          console.error('Error:', error);
+        });
+    });
+  });
+</script>
+{% endblock %}

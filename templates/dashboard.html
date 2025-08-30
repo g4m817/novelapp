@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Shared CSS for Card Layout (same as your Explore page) -->
+<style>
+  /* --- Global Base --- */
+
+
+  /* --- Section Headings --- */
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    padding-left: 8px;
+    border-left: 3px solid #bb86fc;
+    color: #e0e0e0;
+  }
+
+  /* --- Card Components --- */
+  .card.custom-card {
+    background: #1e1e1e;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-bottom: 16px;
+  }
+  .card.custom-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+  }
+  .card-image {
+    height: 160px;
+    background: linear-gradient(135deg, #8e24aa, #6a1b9a);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 12px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .card-image .card-title {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #fff;
+    width: 100%;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-content {
+    padding: 14px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .author {
+    font-size: 0.9rem;
+    color: #bbb;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .story-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 0.85rem;
+    margin: 6px 0;
+  }
+  .story-stats p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+  .inline-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+  }
+  .inline-icon .heart {
+    color: #e57373; /* red */
+  }
+  .inline-icon .chapters {
+    color: #64b5f6; /* blue */
+  }
+  .story-details {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+  }
+  .card-action {
+    padding: 0 14px 14px;
+    display: flex;
+    gap: 8px; /* if you want some spacing between your links/buttons */
+    align-items: center;
+  }
+  .card-action a {
+    display: block;
+    padding: 8px 20px;
+    background: #bb86fc;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 20px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .card-action a:hover {
+    background: #9a66d3;
+    transform: translateY(-1px);
+  }
+  .badge {
+    margin-left: auto; /* pushes the badge to the right */
+  }
+</style>
+
+<!-- "New Story" button at the top -->
+<div class="row right" style="margin-top:15px;">
+  <a class="btn waves-effect waves-light purple" href="{{ url_for('story.new_story') }}">
+    <i class="material-icons left">create</i>New Story
+  </a>
+</div>
+
+<!-- Your Stories Section -->
+<h5 class="section-title">Your Stories</h5>
+<div class="row">
+  {% for story in stories %}
+  <div class="col s12 m6 l4">
+    <div class="card custom-card">
+      {% if story.presigned_cover_url %}
+      <div class="card-image" style="background-image: url('{{ story.presigned_cover_url }}')">
+      {% else %}
+      <div class="card-image">
+      {% endif %}
+        <span class="card-title truncate" title="{{ story.title }}">{{ story.title }}</span>
+      </div>
+      <div class="card-content">
+        <div class="story-stats">
+          <p>
+            <span class="inline-icon">
+              <i class="material-icons heart" title="Favorites">favorite</i>
+            </span>
+            {{ story.favorites_count }}
+          </p>
+          <p>
+            <span class="inline-icon">
+              <i class="material-icons chapters" title="Chapters">menu_book</i>
+            </span>
+            {{ story.chapters_count }}
+          </p>
+        </div>
+        <p class="story-details truncate" title="{{ story.details }}">{{ story.details }}</p>
+      </div>
+      <div class="card-action">
+        <a href="{{ url_for('story_views.read_story', story_id=story.id) }}">Read Story</a>
+        <a href="{{ url_for('story.edit_story', story_id=story.id) }}">Edit Story</a>
+        {% if story.shared %}
+        <span class="new badge green" data-badge-caption="Public"></span>
+        {% else %}
+        <span class="new badge grey" data-badge-caption="Private"></span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination controls for Your Stories -->
+{% if stories_pagination.has_prev or stories_pagination.has_next %}
+<div class="center">
+  <ul class="pagination">
+    {% if stories_pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('dashboard', stories_page=stories_pagination.prev_num, favorites_page=request.args.get('favorites_page', 1)) }}">
+        « Prev
+      </a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+
+    {% for page_num in stories_pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if page_num %}
+        {% if page_num == stories_pagination.page %}
+        <li class="active"><a href="#!">{{ page_num }}</a></li>
+        {% else %}
+        <li class="waves-effect">
+          <a href="{{ url_for('dashboard', stories_page=page_num, favorites_page=request.args.get('favorites_page', 1)) }}">{{ page_num }}</a>
+        </li>
+        {% endif %}
+      {% else %}
+        <li class="disabled"><a href="#!">…</a></li>
+      {% endif %}
+    {% endfor %}
+
+    {% if stories_pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('dashboard', stories_page=stories_pagination.next_num, favorites_page=request.args.get('favorites_page', 1)) }}">
+        Next »
+      </a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Your Favorite Stories Section -->
+<h5 class="section-title">Your Favorite Stories</h5>
+<div class="row">
+  {% for fav in favorites %}
+  <div class="col s12 m6 l4">
+    <div class="card custom-card">
+      {% if fav.presigned_cover_url %}
+      <div class="card-image" style="background-image: url('{{ fav.presigned_cover_url }}')">
+      {% else %}
+      <div class="card-image">
+      {% endif %}
+        <span class="card-title truncate" title="{{ fav.title }}">{{ fav.title }}</span>
+      </div>
+      <div class="card-content">
+        <p class="author truncate" title="By {{ fav.author }}">By {{ fav.author }}</p>
+        <div class="story-stats">
+          <p>
+            <span class="inline-icon">
+              <i class="material-icons heart" title="Favorites">favorite</i>
+            </span>
+            {{ fav.favorites_count }}
+          </p>
+        </div>
+      </div>
+      <div class="card-action">
+        <a href="{{ url_for('story_views.read_story', story_id=fav.id) }}">Read Story</a>
+        <button onclick="toggleFavorite(event)" class="toggle-favorite btn-small red" data-story-id="{{ fav.id }}">
+          Unfavorite
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination controls for Favorite Stories -->
+{% if favorites_pagination.has_prev or favorites_pagination.has_next %}
+<div class="center">
+  <ul class="pagination">
+    {% if favorites_pagination.has_prev %}
+    <li class="waves-effect">
+      <a href="{{ url_for('dashboard', stories_page=request.args.get('stories_page', 1), favorites_page=favorites_pagination.prev_num) }}">
+        « Prev
+      </a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">« Prev</a></li>
+    {% endif %}
+
+    {% for page_num in favorites_pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if page_num %}
+        {% if page_num == favorites_pagination.page %}
+        <li class="active"><a href="#!">{{ page_num }}</a></li>
+        {% else %}
+        <li class="waves-effect">
+          <a href="{{ url_for('dashboard', stories_page=request.args.get('stories_page', 1), favorites_page=page_num) }}">{{ page_num }}</a>
+        </li>
+        {% endif %}
+      {% else %}
+        <li class="disabled"><a href="#!">…</a></li>
+      {% endif %}
+    {% endfor %}
+
+    {% if favorites_pagination.has_next %}
+    <li class="waves-effect">
+      <a href="{{ url_for('dashboard', stories_page=request.args.get('stories_page', 1), favorites_page=favorites_pagination.next_num) }}">
+        Next »
+      </a>
+    </li>
+    {% else %}
+    <li class="disabled"><a href="#!">Next »</a></li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

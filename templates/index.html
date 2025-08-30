@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="landing-page">
+  <div class="hero center-align">
+    <div class="hero-content">
+      <h1>Create Stories Together with AI</h1>
+      <div class="cta-buttons">
+        <a href="{{ url_for('auth_views.register') }}" class="btn btn-primary">Get Started</a>
+        <a href="{{ url_for('auth_views.login') }}" class="btn btn-secondary">Login</a>
+      </div>
+      <br/>
+      <video loop="true" autoplay="autoplay" muted>
+        <source src="/static/images/video.mp4" type="video/mp4" />
+      </video>
+      <p class="lead">
+        Experience the fusion of human creativity and advanced AI technology. Collaborate to transform your ideas into vibrant, engaging narratives that truly resonate.
+      </p>
+    </div>
+    <div class="features">
+      <div class="container center-align">
+        <h4>Why Collaborate with example.com?</h4>
+        <div class="row feature">
+          <h5>Creative Partnership</h5>
+          <p>
+            Combine your imagination with our AI’s powerful tools to develop stories that are uniquely yours.
+          </p>
+        </div>
+        <div class="row feature">
+          <h5>Personalized Storytelling</h5>
+          <p>
+            Customize tone, style, and pace to ensure your narrative reflects your personal vision while embracing innovation.
+          </p>
+        </div>
+        <div class="row feature">
+          <h5>Endless Possibilities</h5>
+          <p>
+            Unlock a world of inspiration with dynamic prompts and intuitive AI suggestions that keep your storytelling journey exciting.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
