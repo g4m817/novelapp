@@ -1,5 +1,7 @@
 # NovelApp – End‑to‑End Coherent Novel Generation
 
+** NOTE: This repository likely contains security issues. It was never launched into production and I was far more focused with building, there are areas that should be assessed if you are consdiering moving it into produciton, such as: markdown report generation / downloads, SQLi, celery tasks, XSS, Authorization logic, and validating the pricing methodology for tokens is accurate. Other issues may include prompt injection and a lack of controls on model output, which could be harmful or potentially cost you a lot of money! **
+
 ## Note from author:
 > This project was one of my first attempts at learning how to integrate AI into web applications and taking a crack at prompt engineering. It's pretty basic, but it was fun to build. No license, if you find it useful in part or in full feel free to use it. It isn't perfect, it could use some tighter engineering. For a minute I considered launching it and improving it, which is why it has complete systems for pricing, but hey, I'm bored of it now.
 
