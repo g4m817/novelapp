@@ -182,7 +182,7 @@ redis-cli ping  # -> PONG
 ```
 
 6) **Login**  
-Open http://localhost:5000 and sign in with the admin credentials you set in `config.py` (defaults are seeded from `app.py` on first run).
+Open http://localhost:5000 and sign in with the admin credentials you set in `config.py`.
 
 ---
 
@@ -192,61 +192,6 @@ Open http://localhost:5000 and sign in with the admin credentials you set in `co
 - User credit checks happen **before** queueing tasks; actual spend occurs **after** generation using measured tokens.
 - To prevent duplicate tasks, a **Redis lock** is set per user while a generation is in progress.
 - Socket.IO events (e.g., `"meta_generated"`, `"summaries_generated"`, `"chapter_generated"`) let the UI update in real time.
-
----
-
-## Quick Start (from original README)
-
-# example.com novel writing applicaiton
-
-# SETUP
-
-## Configure your API keys and passwords and other configuration requirements such as mailgun API in config.py
-```
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "SET_SECURE_PASSWORD_HERE"
-SECRET_KEY = "FLASK_SECRET_KEY"
-SQLALCHEMY_DATABASE_URI = "sqlite:///novelapp.db"
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-JWT_SECRET_KEY = "JWT_SECRET_KEY"
-JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=2)
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
-REGISTRATION_DISABLED = False
-MAINTENANCE_MODE = False
-MAILGUN_DOMAIN = "MG_DOMAIN"
-MAILGUN_API_KEY = "MG_API_KEY"
-MAILGUN_FROM_EMAIL = "MG_EMAIL"
-if env == "development":
-    STRIPE_SECRET_KEY = "DEV_STRIPE_SECRET_KEY"
-    STRIPE_WEBHOOK_SECRET = "DEV_STRIPE_WEBHOOK_SECRET"
-    STRIPE_PUBLISHABLE_KEY = "DEV_STRIPE_PUBLISHABLE_KEY"
-else:
-    STRIPE_SECRET_KEY="PROD_STRIPE_SECRET_KEY"
-    STRIPE_WEBHOOK_SECRET="PROD_STRIPE_WEBHOOK_SECRET"
-    STRIPE_PUBLISHABLE_KEY="PROD_STRIPE_PUBLISHABLE_KEY"
-OPENAI_API_KEY = "OPEN_API_KEY"
-S3_IMAGE_BUCKET = "BUCKET_NAME"
-S3_ENDPOINT = "BUCKET_URL"
-S3_REGION = "BUCKET_REGION"
-S3_IMAGE_ACCESS_KEY_ID = "BUCKET_ACCESS_KEY_ID"
-S3_IMAGE_SECRET_KEY = "BUCKET_SECRET_KEY"
-```
-
-## Install and run the applicaiton
-```
-apt install redis-server python3 python3-venv python3-pip
-
-redis-cli ping
-> pong
-python3 -m venv novelapp
-source novelapp/bin/activate
-pip3 install -r requirements.txt
-env=development python3 app.py
-
-# in a separate terminal
-source novelapp/bin/activate
-celery -A tasks.celery_app worker --loglevel=info
 ```
 
 navigate to http://localhost:5000 and login with creds from `app.py`
