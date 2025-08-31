@@ -8,8 +8,6 @@
 ## Overview
 This repository contains a Flask application that generates long‑form fiction by moving through a structured pipeline: **metadata → outlines → arcs → chapter guides → prose → images**. It combines Flask + SQLAlchemy + Celery + Redis + Socket.IO on the backend with OpenAI models for text and image generation, and stores assets in S3‑compatible object storage.
 
-Below is a practical, code‑accurate overview of how the system works, followed by setup instructions. The original README content is preserved at the end under **Quick Start (from original README)**.
-
 ---
 
 ## How it works (end to end)
